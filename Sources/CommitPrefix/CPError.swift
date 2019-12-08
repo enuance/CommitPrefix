@@ -1,13 +1,13 @@
 //
-//  CommitPrefixError.swift
-//  
+//  CPError.swift
+//
 //
 //  Created by Stephen Martinez on 12/3/19.
 //
 
 import Foundation
 
-enum CommitPrefixError: Error {
+enum CPError: Error {
     
     case userCommandNotRecognized
     case newEntryShouldNotHaveSpaces

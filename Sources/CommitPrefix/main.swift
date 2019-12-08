@@ -3,7 +3,7 @@ let commitPrefixCLI = CLIArguments()
 
 do {
     
-    let fileHandler = try FileHandler()
+    let fileHandler = try CPFileHandler()
     
     try fileHandler.locateOrCreateHook()
     
@@ -23,8 +23,9 @@ do {
         
     }
     
-} catch let prefixError as CommitPrefixError {
+} catch let prefixError as CPError {
     
     print(prefixError.message)
     
 }
+

@@ -1,7 +1,7 @@
 import XCTest
 
-import CommitPrefixTests
+import commitPrefixTests
 
 var tests = [XCTestCaseEntry]()
-tests += CommitPrefixTests.allTests()
+tests += commitPrefixTests.allTests()
 XCTMain(tests)

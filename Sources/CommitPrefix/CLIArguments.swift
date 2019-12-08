@@ -1,6 +1,6 @@
 //
 //  CLIArguments.swift
-//  
+//
 //
 //  Created by Stephen Martinez on 12/2/19.
 //
@@ -35,7 +35,7 @@ public struct CLIArguments {
 
     func getCommand() throws -> UserCommand {
         guard let parsedArgs = try? parser.parse(rawArgs) else {
-            throw CommitPrefixError.userCommandNotRecognized
+            throw CPError.userCommandNotRecognized
         }
         
         var allCommands = [UserCommand]()
@@ -45,15 +45,15 @@ public struct CLIArguments {
         try parsedArgs.get(newEntry).map { userEntry in
             
             guard userEntry.count < 2 else {
-                throw CommitPrefixError.newEntryShouldNotHaveSpaces
+                throw CPError.newEntryShouldNotHaveSpaces
             }
             
             guard let theEntry = userEntry.first else {
-                throw CommitPrefixError.emptyEntry
+                throw CPError.emptyEntry
             }
             
             guard !theEntry.isEmpty else {
-                throw CommitPrefixError.emptyEntry
+                throw CPError.emptyEntry
             }
             
             allCommands.append(.newEntry(entry: theEntry))
@@ -61,11 +61,11 @@ public struct CLIArguments {
         }
         
         guard allCommands.count < 2 else {
-            throw CommitPrefixError.multipleArguments
+            throw CPError.multipleArguments
         }
         
         guard let command = allCommands.first else {
-            throw CommitPrefixError.userCommandNotRecognized
+            throw CPError.userCommandNotRecognized
         }
         
         return command

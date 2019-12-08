@@ -1,7 +1,7 @@
 import XCTest
 import class Foundation.Bundle
 
-final class CommitPrefixTests: XCTestCase {
+final class commitPrefixTests: XCTestCase {
     func testExample() throws {
         // This is an example of a functional test case.
         // Use XCTAssert and related functions to verify your tests produce the correct
@@ -12,7 +12,7 @@ final class CommitPrefixTests: XCTestCase {
             return
         }
 
-        let fooBinary = productsDirectory.appendingPathComponent("CommitPrefix")
+        let fooBinary = productsDirectory.appendingPathComponent("commitPrefix")
 
         let process = Process()
         process.executableURL = fooBinary
