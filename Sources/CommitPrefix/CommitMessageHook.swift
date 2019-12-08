@@ -29,9 +29,9 @@ import Foundation
 
 public struct CommitMessageHook {
     
-    private let cpVersionNumber = "1.0.0"
+    private static let cpVersionNumber = "1.0.0"
     
-    private let fileIdentifier = "Created by CommitPrefix \(cpVersionNumber)"
+    private let fileIdentifier = "Created by CommitPrefix \(Self.cpVersionNumber)"
     
     private let hooksDirectory: Folder
     
