@@ -47,24 +47,90 @@ public struct CommitMessageHook {
     }
 
     private var contents: String { """
-        #!/bin/sh
-        #
-        # Commit-msg
-        #
-        # \(fileIdentifier) on \(currentDate)
-        #
+        #!/usr/bin/swift
+        //
+        // Commit-msg
+        //
+        // \(fileIdentifier) on \(currentDate)
+        //
         
-        # Get the current directory and store it
-        currentDirectory=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+        import Foundation
         
-        # Locate the Commit Prefix file and read/store its contents
-        prefix=$( echo $( cat $currentDirectory/../commitPrefix.txt ) )
+        enum IOError: Error {
+            
+            case invalidArgument
+            case overwriteError
+            
+            var message: String {
+                switch self {
+                case .invalidArgument:
+                    return "Intended to recieve .git/COMMIT_EDITMSG arg"
+                case .overwriteError:
+                    return "There was an error writting to the commit message"
+                }
+            }
+            
+        }
+
+        struct IOHelper {
+            
+            let commitMsgPath: String
+            let prefixPath = ".git/CommitPrefix.txt"
+            
+            init(filePath: [String] = Array(CommandLine.arguments.dropFirst())) throws {
+                guard let firstArg = filePath.first else {
+                    throw IOError.invalidArgument
+                }
+                self.commitMsgPath = firstArg
+            }
+            
+            func readContents(of filePath: String) -> String {
+                let readProcess = Process()
+                readProcess.launchPath = "/usr/bin/env"
+                readProcess.arguments = ["cat", filePath]
+                
+                let pipe = Pipe()
+                readProcess.standardOutput = pipe
+                readProcess.launch()
+                
+                readProcess.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let contents = String(data: data, encoding: .utf8)
+                
+                return contents ?? ""
+            }
+            
+            func overwriteContents(with contents: String) throws {
+                do {
+                    try contents.write(toFile: commitMsgPath, atomically: true, encoding: .utf8)
+                } catch {
+                    throw IOError.overwriteError
+                }
+            }
+            
+        }
+
+
+        do {
+            
+            let helper = try IOHelper()
+            
+            let commitMessage = helper.readContents(of: helper.commitMsgPath)
+                .trimmingCharacters(in: .newlines)
+            
+            let prefixMessage = helper.readContents(of: helper.prefixPath)
+                .trimmingCharacters(in: .newlines)
+            
+            let newCommitMessage = [prefixMessage, commitMessage].joined(separator: " ")
+            try helper.overwriteContents(with: newCommitMessage)
+            
+        } catch let ioError as IOError {
+            
+            print(ioError)
+            
+        }
         
-        # Read and store the contents of the original commit message
-        message=$( echo $( cat $1 ) )
-        
-        # Build the prepended message and overwrite the commit message
-        echo "$( echo $prefix ) $( echo $message )" > $1
         """
     }
     
