@@ -181,6 +181,7 @@ public struct CommitMessageHook {
             print("Overwritting existing commit-msg with generated hook")
             
             do {
+                // TODO: - Theres a case where the file is not executable in the first place this will not correct that
                 try commitHookFile.write(contents, encoding: .utf8)
             } catch {
                 throw CPError.hookReadWriteError
