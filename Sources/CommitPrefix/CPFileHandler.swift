@@ -29,51 +29,52 @@ import Files
 
 public struct CPFileHandler {
     
-    private let commitPrefixFile: File
-    private let commitMessageHook: CommitMessageHook
+    private let cpInteractor: CPInteractor
     
     public init() throws {
-        let currentDirectory = Folder.current
-        let correctLocation = currentDirectory.containsSubfolder(named: FolderName.git)
-        guard correctLocation else {
-            throw CPError.notAGitRepo(currentLocation: currentDirectory.path)
+        guard Folder.current.containsSubfolder(named: FolderName.git) else {
+            throw CPError.notAGitRepo(currentLocation: Folder.current.path)
         }
-        let gitDirectory = try currentDirectory.subfolder(named: FolderName.git)
-        self.commitPrefixFile = try gitDirectory.createFileIfNeeded(withName: FileName.commitPrefix)
-        self.commitMessageHook = try CommitMessageHook(gitDirectory: gitDirectory)
+        let gitDirectory = try Folder.current.subfolder(named: FolderName.git)
+        self.cpInteractor = try CPInteractor(gitDirectory: gitDirectory)
+        try CommitMessageHook.findOrCreate(with: gitDirectory)
     }
     
-    public func locateOrCreateHook() throws {
-        try commitMessageHook.locateOrCreateHook()
+    public func outputPrefixes() throws -> String {
+        try cpInteractor.outputPrefixes()
     }
     
-    public func outputPrefix() throws -> String {
-        let contents = try? commitPrefixFile.readAsString(encodedAs: .utf8)
-        guard let readContents = contents else {
-            throw CPError.fileReadWriteError
+    public func viewState() throws -> String {
+        let cpState = try cpInteractor.getCommitPrefixState()
+        switch cpState.mode {
+        case .normal:
+            return """
+            CommitPrefix MODE NORMAL
+            - prefixes: \(cpState.normalPrefixes.joined())
+            """
+        case .branchParse:
+            return """
+            CommitPrefix MODE BRANCH_PARSE
+            - branch prefixes: \(cpState.branchPrefixes.joined())
+            - stored prefixes: \(cpState.normalPrefixes.joined())
+            """
         }
-        return readContents
     }
     
-    public func deletePrefix() throws -> String {
-        do {
-            try commitPrefixFile.write("", encoding: .utf8)
-        } catch {
-            throw CPError.fileReadWriteError
-        }
-        return "CommitPrefix Deleted"
+    public func deletePrefixes() throws -> String {
+        try cpInteractor.deletePrefixes()
     }
     
-    public func writeNew(prefix: String) throws -> String {
-        let bracketSet = CharacterSet(charactersIn: "[]")
-        let debracketedPrefix = prefix.trimmingCharacters(in: bracketSet)
-        let formattedPrefix = "[\(debracketedPrefix)]"
-        do {
-            try commitPrefixFile.write(formattedPrefix, encoding: .utf8)
-        } catch {
-            throw CPError.fileReadWriteError
-        }
-        return formattedPrefix
+    public func writeNew(prefixes rawValue: String) throws -> String {
+        try cpInteractor.writeNew(prefixes: rawValue)
+    }
+    
+    public func activateBranchMode(with validator: String) throws -> String {
+        try cpInteractor.activateBranchMode(with: validator)
+    }
+    
+    public func activateNormalMode() throws -> String {
+        try cpInteractor.activateNormalMode()
     }
     
 }

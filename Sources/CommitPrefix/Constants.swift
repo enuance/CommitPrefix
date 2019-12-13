@@ -28,7 +28,7 @@ import Foundation
 
 public struct FileName {
     
-    public static let commitPrefix = "CommitPrefix.txt"
+    public static let commitPrefix = "CommitPrefix.JSON"
     public static let commitMessage = "commit-msg"
     
 }
