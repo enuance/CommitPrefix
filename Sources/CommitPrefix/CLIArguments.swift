@@ -141,14 +141,40 @@ public struct CLIArguments {
 private struct ArgumentBuilder {
 
     let usage: String = """
-    <Commit Prefix Description>
+    [<PrefixValue1>,<PrefixValue2>,<PrefixValue3>...] [-o | --output] [-d | --delete]
+    [-n | -normal] [ -b | --branchParse <ValidatorValue> ]
     """
     
     let overview: String = """
-    The CommitPrefix stores a desired prefix for your commit messages.
-    It stores it within the .git folder of the current repository. A
-    commit-msg hook is also generated and stored within the .git
-    folder which is used to prefix the commit message.
+
+    The CommitPrefix stores a desired set of prefixes for your commit messages. It
+    stores it within the .git folder of the current repository. A commit-msg hook is
+    also generated and stored within the .git folder which is used to prefix the
+    commit message.
+
+    Modes:
+    CommitPrefix has two modes, normal and branch parse.
+
+    - NORMAL
+    example: commitPrefix <PrefixValue1>,<PrefixValue2>,<PrefixValue3>...
+    
+    You can add normal prefixes by entering comma seperated values. These values will
+    be parsed as prefixes and prepended to future commit messages.
+
+    - BRANCH_PARSE
+    example commitPrefix -b <ValidatorValue>
+    
+    Branch parse mode checks the current branch for an issue number validated by the
+    value passed in as an argument. For example if you passed in a validator value of
+    "eng" and your current branch was named ENG-342-SomeFeatureBranchLinkedToENG-101,
+    commitPrefix will pickup [ENG-342] and [ENG-101] as branch prefixes to be
+    prepended to you next commit along with any other normal prefixes you might have.
+    
+    You can change back to NORMAL mode by entering:
+    example: commitPrefix -n
+
+    To view the current state of prefixes and mode, enter:
+    example: commitPrefix
     """
 
     func buildParser() -> ArgumentParser {
@@ -190,7 +216,7 @@ private struct ArgumentBuilder {
             option: "--branchParse",
             shortName: "-b",
             kind: Bool.self,
-            usage: "Sets the mode to BRANCH_PARSE. Requires a validator",
+            usage: "Sets the mode to BRANCH_PARSE. Requires a validator argument",
             completion: nil
         )
     }
