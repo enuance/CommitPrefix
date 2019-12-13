@@ -36,7 +36,7 @@ enum CPError: Error {
     case fileReadWriteError
     case directoryNotFound(name: String, path: String)
     case hookReadWriteError
-    case expectedYesOrNo
+    case branchValidatorFormatError
     
     var message: String {
         switch self {
@@ -47,7 +47,7 @@ enum CPError: Error {
         case .emptyEntry:
             return "Your entry is empty."
         case .multipleArguments:
-            return "Multiple arguments entered. Only one at a time is supported."
+            return "Too many arguments entered. Only two at a time is supported."
         case .notAGitRepo(currentLocation: let location):
             return "Not in a git repo or at the root of one: \(location)"
         case .fileReadWriteError:
@@ -56,8 +56,35 @@ enum CPError: Error {
             return "Directory named \(name) was not found at \(path)"
         case .hookReadWriteError:
             return "An error occured while reading or writing to the commit-msg hook"
+        case .branchValidatorFormatError:
+            return "The branch validator must be at least two characters long "
+            + "and contain no numbers or spaces"
+        }
+        
+    }
+    
+}
+
+enum CPTermination: Error {
+    
+    case overwriteCancelled
+    case expectedYesOrNo
+    case branchValidatorNotPresent
+    case invalidBranchPrefix(validator: String)
+    
+    var message: String {
+        switch self {
+        case .overwriteCancelled:
+            return "Overwrite is cancelled"
         case .expectedYesOrNo:
-            return "expected y or n. The transaction has been cancelled."
+            return "Expected y or n. The transaction has been cancelled."
+        case .branchValidatorNotPresent:
+            return "Attempting to provide a branch prefix without a branch validator"
+        case .invalidBranchPrefix(validator: let validator):
+            return """
+            Your branch does not begin with \(validator) and is invalid.
+            Either change your branch name or use commitPrefix in non-branch mode.
+            """
         }
         
     }

@@ -29,7 +29,7 @@ import Foundation
 
 public struct CommitMessageHook {
     
-    private static let cpVersionNumber = "1.0.0"
+    private static let cpVersionNumber = "1.1.0"
     
     private let fileIdentifier = "Created by CommitPrefix \(Self.cpVersionNumber)"
     
@@ -40,6 +40,11 @@ public struct CommitMessageHook {
             throw CPError.directoryNotFound(name: FolderName.hooks, path: gitDirectory.path)
         }
         self.hooksDirectory = hooksDirectory
+    }
+    
+    public static func findOrCreate(with gitDirectory: Folder) throws {
+        let cpHook = try CommitMessageHook(gitDirectory: gitDirectory)
+        try cpHook.locateOrCreateHook()
     }
     
     private var currentDate: String {
@@ -57,7 +62,7 @@ public struct CommitMessageHook {
         //
         
         import Foundation
-        
+
         enum IOError: Error {
             
             case invalidArgument
@@ -74,22 +79,36 @@ public struct CommitMessageHook {
             
         }
 
-        struct IOHelper {
+        struct IOCommitPrefix {
             
             let commitMsgPath: String
-            let prefixPath = ".git/CommitPrefix.txt"
             
             init(filePath: [String] = Array(CommandLine.arguments.dropFirst())) throws {
-                guard let firstArg = filePath.first else {
-                    throw IOError.invalidArgument
-                }
+                guard let firstArg = filePath.first else { throw IOError.invalidArgument }
                 self.commitMsgPath = firstArg
             }
             
-            func readContents(of filePath: String) -> String {
+            func getPrefixes() -> String {
                 let readProcess = Process()
                 readProcess.launchPath = "/usr/bin/env"
-                readProcess.arguments = ["cat", filePath]
+                readProcess.arguments = ["commitPrefix", "-o"]
+                
+                let pipe = Pipe()
+                readProcess.standardOutput = pipe
+                readProcess.launch()
+                
+                readProcess.waitUntilExit()
+                
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let contents = String(data: data, encoding: .utf8)
+                
+                return contents ?? ""
+            }
+            
+            func getCommitMessage() -> String {
+                let readProcess = Process()
+                readProcess.launchPath = "/usr/bin/env"
+                readProcess.arguments = ["cat", commitMsgPath]
                 
                 let pipe = Pipe()
                 readProcess.standardOutput = pipe
@@ -116,16 +135,16 @@ public struct CommitMessageHook {
 
         do {
             
-            let helper = try IOHelper()
+            let ioCommitPrefix = try IOCommitPrefix()
             
-            let commitMessage = helper.readContents(of: helper.commitMsgPath)
+            let prefixes = ioCommitPrefix.getPrefixes()
                 .trimmingCharacters(in: .newlines)
             
-            let prefixMessage = helper.readContents(of: helper.prefixPath)
+            let commitMessage = ioCommitPrefix.getCommitMessage()
                 .trimmingCharacters(in: .newlines)
             
-            let newCommitMessage = [prefixMessage, commitMessage].joined(separator: " ")
-            try helper.overwriteContents(with: newCommitMessage)
+            let newCommitMessage = [prefixes, commitMessage].joined(separator: " ")
+            try ioCommitPrefix.overwriteContents(with: newCommitMessage)
             
         } catch let ioError as IOError {
             
@@ -136,19 +155,6 @@ public struct CommitMessageHook {
         """
     }
     
-    private func makeExecutable(_ fileName: String) {
-        let executableProcess = Process()
-        executableProcess.launchPath = "/usr/bin/env"
-        cpDebugPrint(executableProcess.launchPath ?? "nil")
-        executableProcess.arguments = ["chmod", "755", fileName]
-        
-        let pipe = Pipe()
-        executableProcess.standardOutput = pipe
-        executableProcess.launch()
-        
-        executableProcess.waitUntilExit()
-    }
-    
     private func getCommitHookFile() throws -> File? {
         
         guard let foundCommitHookFile = try? hooksDirectory.file(named: FileName.commitMessage) else {
@@ -157,7 +163,7 @@ public struct CommitMessageHook {
                 let commitHookFile = try hooksDirectory.createFile(named: FileName.commitMessage)
                 try commitHookFile.write(contents, encoding: .utf8)
                 cpDebugPrint(commitHookFile.path)
-                makeExecutable(commitHookFile.path)
+                Shell.makeExecutable(commitHookFile.path)
             } catch {
                 throw CPError.hookReadWriteError
             }
@@ -188,12 +194,10 @@ public struct CommitMessageHook {
             }
             
         case "n":
-            print("Overwrite is cancelled")
-            exit(0)
+            throw CPTermination.overwriteCancelled
             
         default:
-            
-            throw CPError.expectedYesOrNo
+            throw CPTermination.expectedYesOrNo
             
         }
     }
@@ -207,7 +211,7 @@ public struct CommitMessageHook {
         return hookContents.contains(fileIdentifier)
     }
     
-    public func locateOrCreateHook() throws {
+    private func locateOrCreateHook() throws {
         guard let foundCommitHookFile = try getCommitHookFile() else { return }
         guard try !hookIsCommitPrefix(foundCommitHookFile) else { return }
         try overwriteCommitHook(foundCommitHookFile)

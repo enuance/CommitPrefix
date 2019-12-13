@@ -1,5 +1,5 @@
 //
-//  main.swift
+//  String+Extensions.swift
 //  commitPrefix
 //
 //  MIT License
@@ -26,48 +26,40 @@
 
 import Foundation
 
-let cpCommandLineInterface = CLIArguments()
-
-do {
+public extension String {
     
-    let fileHandler = try CPFileHandler()
-    
-    switch try cpCommandLineInterface.getCommand() {
+    private func findMatches(in string: String, using regex: String) -> [String] {
         
-    case .viewState:
-        let currentState = try fileHandler.viewState()
-        print(currentState)
+        #if DEBUG
+        let isValid = (try? NSRegularExpression(pattern: regex, options: [])) != nil
+        assert(isValid, "Invalid Regex Pattern: \(regex)")
+        #endif
         
-    case .outputPrefixes:
-        let prefixOutput = try fileHandler.outputPrefixes()
-        print(prefixOutput)
+        var searchString = string
+        var foundMatches = [String]()
         
-    case .deletePrefixes:
-        let deletionMessage = try fileHandler.deletePrefixes()
-        print(deletionMessage)
-    
-    case .modeNormal:
-        let modeSetMessage = try fileHandler.activateNormalMode()
-        print(modeSetMessage)
+        var nextMatchFound: Range<String.Index>? {
+            searchString.range(of: regex, options: .regularExpression)
+        }
         
-    case .modeBranchParse(validator: let rawValidatorValue):
-        let modeSetMessage = try fileHandler.activateBranchMode(with: rawValidatorValue)
-        print(modeSetMessage)
+        func newSearch(string: String, removing range: Range<String.Index>) -> String {
+            var newString = string
+            let removingRange = string.startIndex..<range.upperBound
+            newString.removeSubrange(removingRange)
+            return newString
+        }
         
-    case .newPrefixes(value: let rawPrefixValue):
-        let storedPrefixesMessage = try fileHandler.writeNew(prefixes: rawPrefixValue)
-        print(storedPrefixesMessage)
+        while let matchRange = nextMatchFound {
+            let newMatch = String(searchString[matchRange])
+            foundMatches.append(newMatch)
+            searchString = newSearch(string: searchString, removing: matchRange)
+        }
         
+        return foundMatches
     }
     
-} catch let prefixError as CPError {
-    
-    print(prefixError.message)
-    
-} catch let terminationError as CPTermination {
-    
-    print(terminationError.message)
-    exit(0)
+    func occurances(ofRegex pattern: String) -> [String] {
+        findMatches(in: self, using: pattern)
+    }
     
 }
-

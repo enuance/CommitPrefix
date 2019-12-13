@@ -1,5 +1,5 @@
 //
-//  main.swift
+//  Shell.swift
 //  commitPrefix
 //
 //  MIT License
@@ -26,48 +26,41 @@
 
 import Foundation
 
-let cpCommandLineInterface = CLIArguments()
-
-do {
+struct Shell {
     
-    let fileHandler = try CPFileHandler()
-    
-    switch try cpCommandLineInterface.getCommand() {
+    static func makeExecutable(_ fileName: String) {
+        let executableProcess = Process()
+        executableProcess.launchPath = "/usr/bin/env"
+        cpDebugPrint(executableProcess.launchPath ?? "nil")
+        executableProcess.arguments = ["chmod", "755", fileName]
         
-    case .viewState:
-        let currentState = try fileHandler.viewState()
-        print(currentState)
+        let pipe = Pipe()
+        executableProcess.standardOutput = pipe
+        executableProcess.launch()
         
-    case .outputPrefixes:
-        let prefixOutput = try fileHandler.outputPrefixes()
-        print(prefixOutput)
-        
-    case .deletePrefixes:
-        let deletionMessage = try fileHandler.deletePrefixes()
-        print(deletionMessage)
-    
-    case .modeNormal:
-        let modeSetMessage = try fileHandler.activateNormalMode()
-        print(modeSetMessage)
-        
-    case .modeBranchParse(validator: let rawValidatorValue):
-        let modeSetMessage = try fileHandler.activateBranchMode(with: rawValidatorValue)
-        print(modeSetMessage)
-        
-    case .newPrefixes(value: let rawPrefixValue):
-        let storedPrefixesMessage = try fileHandler.writeNew(prefixes: rawPrefixValue)
-        print(storedPrefixesMessage)
-        
+        executableProcess.waitUntilExit()
     }
     
-} catch let prefixError as CPError {
-    
-    print(prefixError.message)
-    
-} catch let terminationError as CPTermination {
-    
-    print(terminationError.message)
-    exit(0)
+    static func currentBranch() -> String? {
+        let gitProcess = Process()
+        gitProcess.launchPath = "/usr/bin/env"
+        gitProcess.arguments = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+        
+        let pipe = Pipe()
+        gitProcess.standardOutput = pipe
+        gitProcess.launch()
+        
+        gitProcess.waitUntilExit()
+        
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let branchName = String(data: data, encoding: .utf8)
+        let trimmedBranchName = branchName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if trimmedBranchName == nil {
+            cpDebugPrint("Unable to get branch")
+        }
+        
+        return trimmedBranchName
+    }
     
 }
-

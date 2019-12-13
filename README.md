@@ -8,13 +8,16 @@ ___
 
 CommitPrefix is a simple command line tool that helps you to easily prefix your commit messages. The common use case for this is tagging your commit messages with a Jira (or other issue tracking software) ticket number. The desired prefix is stored within the .git folder and picked up by a generated commit-message hook. This allows you to write your ticket number (or any other prefix) once. From then on all commit messages will be prepended with the saved prefix.
 
+There's also a branch parse mode that allows commitPrefix to parse the current branch you're on for a valid issue numbers and use them as prefixes for your next commit. The modes can be switched back and forth arbitrarily and used along with any self defined prefixes.
+
 Prefixes can be re-assigned or deleted at any time. Additionally, this is a git repository specific tool, meaning that stored prefixes are specific to the repository you're in.
 
 The actions that can be done are:
 
-* Store a commit prefix
-* Delete the currently stored prefix
-* View the currently stored prefix
+* Store an arbitrary number of commit prefixes
+* Generate prefixes based on your current branch
+* Delete the currently stored prefixes
+* View the current mode and stored prefixes
 
 ___
 ### -- Installation --
@@ -68,26 +71,45 @@ To use commitPrefix you need to have your working directory set to one that has 
 
 To **store** a prefix
 ```zsh
-% commitPrefix SamplePrefix-001
+% commitPrefix SamplePrefix-001,SamplePrefix-002
 
 # Output
-CommitPrefix saved: [SamplePrefix-001]
+CommitPrefix STORED [SamplePrefix-001][SamplePrefix-002]
 ```
 
-To **view** a prefix
+To change mode to **branchParse**
 ```zsh
-% commitPrefix --view
+% git checkout ENG-342-SomeFeatureBranchLinkedToENG-101
+% commitPrefix -b eng
 
 # Output
-CommitPrefix: [SamplePrefix-001]
+CommitPrefix MODE BRANCH_PARSE eng
+```
+
+To **view** the current prefixes and mode
+```zsh
+% commitPrefix
+
+# Output
+CommitPrefix MODE BRANCH_PARSE
+- branch prefixes: [SamplePrefix-001][SamplePrefix-002]
+- stored prefixes: [ENG-342][ENG-101]
+```
+
+To change back to **normal** mode
+```zsh
+% commitPrefix -n
+
+# Output
+CommitPrefix MODE NORMAL
 ```
 
 To **delete** a prefix
 ```zsh
-% commitPrefix --delete
+% commitPrefix -d
 
 # Output
-CommitPrefix Deleted
+CommitPrefix DELETED
 ```
 
 You can also view these command along with shortend version by using the `--help` tag.
