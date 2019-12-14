@@ -1,0 +1,137 @@
+#!/usr/bin/swift
+//
+//  commitPrefixInstaller
+//  commitPrefix
+//
+//  MIT License
+//
+//  Copyright (c) 2019 STEPHEN L. MARTINEZ
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+
+import Foundation
+
+enum IOError: Error {
+
+    case invalidArgument
+    case executableNotFound(atPath: String)
+    case unableToInstall
+    case packageNotFound
+
+    var message: String {
+        switch self {
+        case .invalidArgument:
+            return "Intended to recieve scipt argument"
+        case .executableNotFound(atPath: let path):
+            return "Executable Not Found at Path: \(path)"
+        case .unableToInstall:
+            return "Unsuccessful Installation"
+        case .packageNotFound:
+            return "Working directory must be at the commitPrefix root directory to run"
+        }
+    }
+
+}
+
+struct CommitPrefixInstaller {
+
+    private let fileManager = FileManager.default
+    private let releaseBuildDirectory: URL
+    private let programsDirectory: URL
+    private let cpExecutableName = "commitPrefix"
+
+    init(filePath: [String] = CommandLine.arguments) throws {
+        guard let firstArg = filePath.first else { throw IOError.invalidArgument }
+        let rawComponents = firstArg.components(separatedBy: "/")
+        let currentDirectoryPath = rawComponents.dropLast().joined(separator: "/")
+        let currentDirectory = URL(fileURLWithPath: currentDirectoryPath, isDirectory: true)
+        self.releaseBuildDirectory = currentDirectory
+            .appendingPathComponent(".build/release", isDirectory: true)
+        self.programsDirectory = URL(fileURLWithPath: "/usr/local/bin", isDirectory: true)
+    }
+
+    private func rootDirectoryCheck() throws {
+        if !fileManager.fileExists(atPath: "./Package.swift") {
+          print("🤷‍♂️ Unable to locate Package.swift file 🤷‍♂️")
+          throw IOError.packageNotFound
+        }
+    }
+
+    func buildCPExecutable() throws {
+        try rootDirectoryCheck()
+        print("🛠  Building \(cpExecutableName) executables... 🛠")
+        let buildProcess = Process()
+        buildProcess.launchPath = "/usr/bin/env"
+        buildProcess.arguments = ["swift", "build", "-c", "release"]
+
+        let pipe = Pipe()
+        buildProcess.standardOutput = pipe
+        buildProcess.launch()
+
+        buildProcess.waitUntilExit()
+    }
+
+    func moveCPExecutable() throws {
+        print("📦 Installing \(cpExecutableName)... 📦")
+        let cpExecutable = releaseBuildDirectory.appendingPathComponent(cpExecutableName)
+        let existingCPExecutableInstalled = programsDirectory.appendingPathComponent(cpExecutableName)
+
+        guard fileManager.fileExists(atPath: cpExecutable.path) else {
+            throw IOError.executableNotFound(atPath: cpExecutable.path)
+        }
+
+        if fileManager.fileExists(atPath: existingCPExecutableInstalled.path) {
+            print("🔎 Found existing \(cpExecutableName) -- Overwritting... 🔎")
+        }
+
+        let moveProcess = Process()
+        moveProcess.launchPath = "/usr/bin/env"
+        moveProcess.arguments = ["mv", "\(cpExecutable.path)", "\(programsDirectory.path)"]
+
+        let pipe = Pipe()
+        moveProcess.standardOutput = pipe
+        moveProcess.launch()
+
+        moveProcess.waitUntilExit()
+
+        if fileManager.fileExists(atPath: existingCPExecutableInstalled.path) {
+            print("🎉 \(cpExecutableName) successfully installed 🎉")
+        } else {
+            throw IOError.unableToInstall
+        }
+    }
+
+}
+
+
+do {
+
+    let cpInstaller = try CommitPrefixInstaller()
+    try cpInstaller.buildCPExecutable()
+    try cpInstaller.moveCPExecutable()
+
+} catch let ioError as IOError {
+
+    print(ioError.message)
+
+} catch {
+
+    print(error)
+
+}
