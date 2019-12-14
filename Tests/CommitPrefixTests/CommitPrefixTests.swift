@@ -52,7 +52,8 @@ final class commitPrefixTests: XCTestCase {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8)
 
-        XCTAssertEqual(output, "Hello, world!\n")
+        XCTAssert(false, "Tests have not been implemented")
+        //XCTAssertEqual(output, "Hello, world!\n")
     }
 
     /// Returns path to the built products directory.
