@@ -65,6 +65,7 @@ enum CPError: Error {
     
 }
 
+/// An Error Type that should terminate the program if detected
 enum CPTermination: Error {
     
     case overwriteCancelled

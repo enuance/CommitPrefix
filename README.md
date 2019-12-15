@@ -20,45 +20,49 @@ The actions that can be done are:
 * View the current mode and stored prefixes
 
 ___
+### -- Requirements --
+
+This package uses `swift-tools-version:5.1` as a minimum requirement to build and install.
+
+Check to see that you have Swift 5.1 or greater to meet the requirements
+```zsh
+% swift --version
+```
+
+Supported OS:
+- macOS Catalina v10.15.1 or greater
+
+___
 ### -- Installation --
 
-1. Clone the repo
+1. Clone the repo and move to the root of the directory
 
 ```zsh
 % git clone https://github.com/enuance/commitPrefix.git
-```
-
-2. Open the Package
-
-```zsh
 % cd commitPrefix
-% open Package.swift
 ```
 
-3. Build the executable by pressing **⌘B** or select it from the menu **Product -> Build**
-
-4. Locate the executable by running this in the terminal
+2. *Optional* Run the installer
 
 ```zsh
-% find ~/Library/Developer/Xcode/DerivedData -name "commitPrefix"
+% ./Installer
 ```
 
-This command will display all locations where files have the name “commitPrefix”
-It should be the one contained in `/Users/<UserName>/Library/Developer/Xcode/DerivedData/commitPrefix-<GeneratedString>/Build/Products/Release/commitPrefix`
+As a good practice, please make sure to read the source code of the installer script before running it. If you do not feel comfortable running the installer, you could manually build and install it instead. If you would like to do so, follow these steps:
 
-Make sure not to select ones that have `commitPrefix.dSYM` in it's path
-
-5. Open a window at the location by using Finder and selecting **Go -> Go to folder...** enter in the path and select **Go**
-
-You can also use the terminal **open** command but you'd have to remove the executable `/commitPrefix` from the end of the path
-
-6. Open your local executables folder by entering: 
+2. Build the executable
 
 ```zsh
-% open /usr/local/bin
+% swift build -c release
 ```
 
-7. Drag and drop the Unix executable `commitPrefix` into you `bin` folder. On your next Terminal session you should be able to see auto-completion and use commitPrefix.
+3. Install it into the local bin folder
+
+```zsh
+% mv .build/release/commitPrefix /usr/local/bin 
+```
+
+On your next Terminal session you should be able to see auto-completion and use commitPrefix.
 
 ___
 ### -- Usage --
