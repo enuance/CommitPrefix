@@ -30,6 +30,7 @@ import SPMUtility
 public struct CLIArguments {
 
     public enum UserCommand {
+        case outputVersion
         case viewState
         case outputPrefixes
         case deletePrefixes
@@ -39,6 +40,7 @@ public struct CLIArguments {
     }
     
     private enum ParsedCommand {
+        case outputVersion
         case viewState
         case outputPrefixes
         case deletePrefixes
@@ -50,6 +52,7 @@ public struct CLIArguments {
     private let parser: ArgumentParser
     private let rawArgs: [String]
 
+    private let outputVersion: OptionArgument<Bool>
     private let outputPrefixes: OptionArgument<Bool>
     private let deletePrefixes: OptionArgument<Bool>
     private let modeNormal: OptionArgument<Bool>
@@ -62,6 +65,7 @@ public struct CLIArguments {
         let argBuilder = ArgumentBuilder()
         self.parser = argBuilder.buildParser()
         
+        self.outputVersion = argBuilder.buildVersionArgument(parser: parser)
         self.outputPrefixes = argBuilder.buildOutputArgument(parser: parser)
         self.deletePrefixes = argBuilder.buildDeleteArgument(parser: parser)
         self.modeNormal = argBuilder.buildNormalArgument(parser: parser)
@@ -76,6 +80,8 @@ public struct CLIArguments {
         }
         
         switch foundCommand {
+        case .outputVersion:
+            return .outputVersion
         case .outputPrefixes:
             return .outputPrefixes
         case .deletePrefixes:
@@ -111,6 +117,7 @@ public struct CLIArguments {
         
         var allCommands = [ParsedCommand]()
         
+        parsedArgs.get(outputVersion).map { _ in allCommands.append(.outputVersion) }
         parsedArgs.get(outputPrefixes).map { _ in allCommands.append(.outputPrefixes) }
         parsedArgs.get(deletePrefixes).map { _ in allCommands.append(.deletePrefixes) }
         parsedArgs.get(modeNormal).map { _ in allCommands.append(.modeNormal) }
@@ -142,7 +149,7 @@ private struct ArgumentBuilder {
 
     let usage: String = """
     [<PrefixValue1>,<PrefixValue2>,<PrefixValue3>...] [-o | --output] [-d | --delete]
-    [-n | -normal] [ -b | --branchParse <ValidatorValue> ]
+    [-n | -normal] [ -b | --branchParse <ValidatorValue> ] [-v | --version]
     """
     
     let overview: String = """
@@ -179,6 +186,16 @@ private struct ArgumentBuilder {
 
     func buildParser() -> ArgumentParser {
         ArgumentParser(usage: usage, overview: overview)
+    }
+    
+    func buildVersionArgument(parser: ArgumentParser) -> OptionArgument<Bool> {
+        return parser.add(
+            option: "--version",
+            shortName: "-v",
+            kind: Bool.self,
+            usage: "Outputs the current version information",
+            completion: nil
+        )
     }
     
     func buildOutputArgument(parser: ArgumentParser) -> OptionArgument<Bool> {

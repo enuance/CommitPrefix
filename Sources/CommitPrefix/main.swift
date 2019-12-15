@@ -30,31 +30,39 @@ let cpCommandLineInterface = CLIArguments()
 
 do {
     
-    let fileHandler = try CPFileHandler()
-    
     switch try cpCommandLineInterface.getCommand() {
         
+    case .outputVersion:
+        let version = CPInfo.version
+        print("commitPrefix version \(version)")
+        
     case .viewState:
+        let fileHandler = try CPFileHandler()
         let currentState = try fileHandler.viewState()
         print(currentState)
         
     case .outputPrefixes:
+        let fileHandler = try CPFileHandler()
         let prefixOutput = try fileHandler.outputPrefixes()
         print(prefixOutput)
         
     case .deletePrefixes:
+        let fileHandler = try CPFileHandler()
         let deletionMessage = try fileHandler.deletePrefixes()
         print(deletionMessage)
     
     case .modeNormal:
+        let fileHandler = try CPFileHandler()
         let modeSetMessage = try fileHandler.activateNormalMode()
         print(modeSetMessage)
         
     case .modeBranchParse(validator: let rawValidatorValue):
+        let fileHandler = try CPFileHandler()
         let modeSetMessage = try fileHandler.activateBranchMode(with: rawValidatorValue)
         print(modeSetMessage)
         
     case .newPrefixes(value: let rawPrefixValue):
+        let fileHandler = try CPFileHandler()
         let storedPrefixesMessage = try fileHandler.writeNew(prefixes: rawPrefixValue)
         print(storedPrefixesMessage)
         
