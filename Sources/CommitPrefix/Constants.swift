@@ -26,6 +26,12 @@
 
 import Foundation
 
+public struct CPInfo {
+    
+    public static let version = "1.3.0"
+    
+}
+
 public struct FileName {
     
     public static let commitPrefix = "CommitPrefix.JSON"
