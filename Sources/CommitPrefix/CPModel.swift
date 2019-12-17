@@ -1,5 +1,5 @@
 //
-//  CommitPrefixModel.swift
+//  CPModel.swift
 //  commitPrefix
 //
 //  MIT License
@@ -26,14 +26,18 @@
 
 import Foundation
 
-public enum PrefixMode: Int {
-    
+enum PrefixMode: Int {
     case normal
     case branchParse
-    
 }
 
-public struct CommitPrefixModel: Codable {
+struct CPState {
+    let mode: PrefixMode
+    let branchPrefixes: [String]
+    let normalPrefixes: [String]
+}
+
+struct CPModel: Codable {
  
     let prefixMode: PrefixMode
     let branchValidator: String?
@@ -58,7 +62,7 @@ public struct CommitPrefixModel: Codable {
         self.prefixes = prefixes
     }
     
-    public init(from decoder: Decoder) throws {
+    init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         let prefixModeRawValue = try values.decode(Int.self, forKey: .prefixMode)
         self.prefixMode = PrefixMode(rawValue: prefixModeRawValue) ?? PrefixMode.normal
@@ -66,49 +70,43 @@ public struct CommitPrefixModel: Codable {
         self.prefixes = try values.decode([String].self, forKey: .prefixes)
     }
     
-    public func encode(to encoder: Encoder) throws {
+    func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(prefixMode.rawValue, forKey: .prefixMode)
         try container.encodeIfPresent(branchValidator, forKey: .branchValidator)
         try container.encode(prefixes, forKey: .prefixes)
     }
     
-    static public func empty() -> CommitPrefixModel {
-        return CommitPrefixModel(
+    static func empty() -> CPModel {
+        return CPModel(
             prefixMode: .normal,
             branchValidator: nil,
             prefixes: []
         )
     }
     
-    public func updated(with newPrefixes: [String]) -> CommitPrefixModel {
-        return CommitPrefixModel(
+    func updated(with newPrefixes: [String]) -> CPModel {
+        return CPModel(
             prefixMode: prefixMode,
             branchValidator: branchValidator,
             prefixes: newPrefixes
         )
     }
     
-    public func updatedAsBranchMode(with newBranchValidator: String) -> CommitPrefixModel {
-        return CommitPrefixModel(
+    func updatedAsBranchMode(with newBranchValidator: String) -> CPModel {
+        return CPModel(
             prefixMode: .branchParse,
             branchValidator: newBranchValidator,
             prefixes: prefixes
         )
     }
     
-    public func updatedAsNormalMode() -> CommitPrefixModel {
-        return CommitPrefixModel(
+    func updatedAsNormalMode() -> CPModel {
+        return CPModel(
             prefixMode: .normal,
             branchValidator: nil,
             prefixes: prefixes
         )
     }
     
-}
-
-public struct CommitPrefixState {
-    let mode: PrefixMode
-    let branchPrefixes: [String]
-    let normalPrefixes: [String]
 }

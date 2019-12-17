@@ -26,7 +26,7 @@
 
 import Foundation
 
-public extension String {
+extension String {
     
     private func findMatches(in string: String, using regex: String) -> [String] {
         

@@ -6,18 +6,20 @@ import PackageDescription
 let package = Package(
     name: "commitPrefix",
     dependencies: [
-        // Dependencies declare other packages that this package depends on.
+        // 📁 John Sundell's Files Package is great for easy file reading/writing/moving/etc.
         .package(url: "https://github.com/JohnSundell/Files", from: "4.0.0"),
+        // 🧰 SPMUtilities for CLI Argument Parsing.
         .package(url: "https://github.com/apple/swift-package-manager", from: "0.5.0")
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages which this package depends on.
         .target(
             name: "commitPrefix",
-            dependencies: ["Files", "SPMUtility"]),
+            dependencies: ["Files", "SPMUtility"],
+            // Normally don't have to specify the path, but I wan't the actual executable to be
+            // lowercase and SPM brings folders in Uppercased by default.
+            path: "Sources/CommitPrefix"),
         .testTarget(
-            name: "commitPrefixTests",
+            name: "CommitPrefixTests",
             dependencies: ["commitPrefix"]),
     ]
 )

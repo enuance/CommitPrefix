@@ -26,22 +26,22 @@
 
 import Foundation
 
-public struct CPInfo {
+struct CPInfo {
     
-    public static let version = "1.3.0"
-    
-}
-
-public struct FileName {
-    
-    public static let commitPrefix = "CommitPrefix.JSON"
-    public static let commitMessage = "commit-msg"
+    static let version = "1.3.1"
     
 }
 
-public struct FolderName {
+struct FileName {
     
-    public static let git = ".git"
-    public static let hooks = "hooks"
+    static let commitPrefix = "CommitPrefix.JSON"
+    static let commitMessage = "commit-msg"
+    
+}
+
+struct FolderName {
+    
+    static let git = ".git"
+    static let hooks = "hooks"
     
 }

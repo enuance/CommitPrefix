@@ -27,11 +27,11 @@
 import Foundation
 import Files
 
-public struct CPFileHandler {
+struct CPFileHandler {
     
     private let cpInteractor: CPInteractor
     
-    public init() throws {
+    init() throws {
         guard Folder.current.containsSubfolder(named: FolderName.git) else {
             throw CPError.notAGitRepo(currentLocation: Folder.current.path)
         }
@@ -40,11 +40,11 @@ public struct CPFileHandler {
         try CommitMessageHook.findOrCreate(with: gitDirectory)
     }
     
-    public func outputPrefixes() throws -> String {
+    func outputPrefixes() throws -> String {
         try cpInteractor.outputPrefixes()
     }
     
-    public func viewState() throws -> String {
+    func viewState() throws -> String {
         let cpState = try cpInteractor.getCommitPrefixState()
         switch cpState.mode {
         case .normal:
@@ -61,19 +61,19 @@ public struct CPFileHandler {
         }
     }
     
-    public func deletePrefixes() throws -> String {
+    func deletePrefixes() throws -> String {
         try cpInteractor.deletePrefixes()
     }
     
-    public func writeNew(prefixes rawValue: String) throws -> String {
+    func writeNew(prefixes rawValue: String) throws -> String {
         try cpInteractor.writeNew(prefixes: rawValue)
     }
     
-    public func activateBranchMode(with validator: String) throws -> String {
+    func activateBranchMode(with validator: String) throws -> String {
         try cpInteractor.activateBranchMode(with: validator)
     }
     
-    public func activateNormalMode() throws -> String {
+    func activateNormalMode() throws -> String {
         try cpInteractor.activateNormalMode()
     }
     
