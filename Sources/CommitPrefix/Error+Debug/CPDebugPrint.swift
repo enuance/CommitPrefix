@@ -33,7 +33,7 @@ private let isDebugMode = false
 #endif
 
 /// A Debug Printer that only prints in debug mode
-public func cpDebugPrint(_ value: Any, file: String = #file, line: Int = #line, function: String = #function) {
+func cpDebugPrint(_ value: Any, file: String = #file, line: Int = #line, function: String = #function) {
     guard isDebugMode else { return }
     print("********** Commit Prefix Debug **********")
     print("File: \(file)")

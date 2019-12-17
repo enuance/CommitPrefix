@@ -30,7 +30,7 @@ import Files
 struct CPInteractor {
     
     private let commitPrefixFile: File
-    private let commitPrefixModel: CommitPrefixModel
+    private let commitPrefixModel: CPModel
     
     init (gitDirectory: Folder) throws {
         let (commitPrefixFile, commitPrefixModel) = try Self.build(using: gitDirectory)
@@ -38,14 +38,14 @@ struct CPInteractor {
         self.commitPrefixModel = commitPrefixModel
     }
     
-    private static func build(using gitDirectory: Folder) throws -> (File, CommitPrefixModel) {
+    private static func build(using gitDirectory: Folder) throws -> (File, CPModel) {
         do {
-            let initialModelData = try JSONEncoder().encode(CommitPrefixModel.empty())
+            let initialModelData = try JSONEncoder().encode(CPModel.empty())
             let cpFile = try gitDirectory.createFileIfNeeded(
                 withName: FileName.commitPrefix,
                 contents: initialModelData)
             let cpFileData = try cpFile.read()
-            let cpModel = try JSONDecoder().decode(CommitPrefixModel.self, from: cpFileData)
+            let cpModel = try JSONDecoder().decode(CPModel.self, from: cpFileData)
             return (cpFile, cpModel)
         } catch {
             cpDebugPrint(error)
@@ -53,7 +53,7 @@ struct CPInteractor {
         }
     }
     
-    private func saveCommitPrefix(model: CommitPrefixModel) throws {
+    private func saveCommitPrefix(model: CPModel) throws {
         do {
             let jsonEncoder = JSONEncoder()
             let modelData = try jsonEncoder.encode(model)
@@ -99,7 +99,7 @@ struct CPInteractor {
         return validator
     }
     
-    public func outputPrefixes() throws -> String {
+    func outputPrefixes() throws -> String {
         switch commitPrefixModel.prefixMode {
         case .normal:
             return commitPrefixModel.prefixes.joined()
@@ -111,10 +111,10 @@ struct CPInteractor {
         }
     }
     
-    public func getCommitPrefixState() throws -> CommitPrefixState {
+    func getCommitPrefixState() throws -> CPState {
         switch commitPrefixModel.prefixMode {
         case .normal:
-            return CommitPrefixState(
+            return CPState(
                 mode: .normal,
                 branchPrefixes: [],
                 normalPrefixes: commitPrefixModel.prefixes
@@ -123,7 +123,7 @@ struct CPInteractor {
             let retrievedBranchPrefixes = try branchPrefixes()
             let branchPrefixes = retrievedBranchPrefixes.map { "[\($0)]" }
             let normalPrefixes = commitPrefixModel.prefixes
-            return CommitPrefixState(
+            return CPState(
                 mode: .branchParse,
                 branchPrefixes: branchPrefixes,
                 normalPrefixes: normalPrefixes
@@ -131,27 +131,27 @@ struct CPInteractor {
         }
     }
     
-    public func deletePrefixes() throws -> String {
+    func deletePrefixes() throws -> String {
         let newModel = commitPrefixModel.updated(with: [])
         try saveCommitPrefix(model: newModel)
         return "CommitPrefix DELETED"
     }
     
-    public func writeNew(prefixes rawValue: String) throws -> String {
+    func writeNew(prefixes rawValue: String) throws -> String {
         let newPrefixes = prefixFormatter(rawValue)
         let newModel = commitPrefixModel.updated(with: newPrefixes)
         try saveCommitPrefix(model: newModel)
         return "CommitPrefix STORED \(newPrefixes.joined())"
     }
     
-    public func activateBranchMode(with validator: String) throws -> String {
+    func activateBranchMode(with validator: String) throws -> String {
         let formattedValidator = try validatorFormatter(validator)
         let newModel = commitPrefixModel.updatedAsBranchMode(with: formattedValidator)
         try saveCommitPrefix(model: newModel)
         return "CommitPrefix MODE BRANCH_PARSE \(formattedValidator)"
     }
     
-    public func activateNormalMode() throws -> String {
+    func activateNormalMode() throws -> String {
         switch commitPrefixModel.prefixMode {
         case .normal:
             return "CommitPrefix already in MODE NORMAL"
