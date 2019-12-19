@@ -72,6 +72,7 @@ enum CPTermination: Error {
     case expectedYesOrNo
     case branchValidatorNotPresent
     case invalidBranchPrefix(validator: String)
+    case unableToReadHEAD
     
     var message: String {
         switch self {
@@ -86,6 +87,8 @@ enum CPTermination: Error {
             Your branch does not begin with \(validator) and is invalid.
             Either change your branch name or use commitPrefix in non-branch mode.
             """
+        case .unableToReadHEAD:
+            return "Unable to read the git HEAD for branch information"
         }
         
     }

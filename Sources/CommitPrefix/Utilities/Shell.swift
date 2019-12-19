@@ -31,7 +31,6 @@ struct Shell {
     static func makeExecutable(_ fileName: String) {
         let executableProcess = Process()
         executableProcess.launchPath = "/usr/bin/env"
-        cpDebugPrint(executableProcess.launchPath ?? "nil")
         executableProcess.arguments = ["chmod", "755", fileName]
         
         let pipe = Pipe()
@@ -39,28 +38,6 @@ struct Shell {
         executableProcess.launch()
         
         executableProcess.waitUntilExit()
-    }
-    
-    static func currentBranch() -> String? {
-        let gitProcess = Process()
-        gitProcess.launchPath = "/usr/bin/env"
-        gitProcess.arguments = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-        
-        let pipe = Pipe()
-        gitProcess.standardOutput = pipe
-        gitProcess.launch()
-        
-        gitProcess.waitUntilExit()
-        
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
-        let branchName = String(data: data, encoding: .utf8)
-        let trimmedBranchName = branchName?.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        if trimmedBranchName == nil {
-            cpDebugPrint("Unable to get branch")
-        }
-        
-        return trimmedBranchName
     }
     
 }

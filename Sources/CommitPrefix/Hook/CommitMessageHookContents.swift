@@ -37,7 +37,7 @@ struct CommitMessageHookContents {
     }
     
     func renderScript() -> String { """
-        #!/usr/bin/swift
+        #!/usr/bin/env swift
         //
         // Commit-msg
         //
@@ -98,6 +98,12 @@ struct CommitMessageHookContents {
         func getPrefixes() -> String {
             let readProcess = Process()
             readProcess.launchPath = "/usr/bin/env"
+        
+            var readProcessEnv = ProcessInfo.processInfo.environment
+            let paths = readProcessEnv["PATH"]
+            paths.map { readProcessEnv["PATH"] = "/usr/local/bin:\\($0)" }
+        
+            readProcess.environment = readProcessEnv
             readProcess.arguments = ["commitPrefix", "-o"]
             
             let pipe = Pipe()

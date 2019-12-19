@@ -77,5 +77,9 @@ do {
     print(terminationError.message)
     exit(0)
     
+} catch {
+    
+    print("Unexpected Error: ", error)
+    exit(0)
+    
 }
-
