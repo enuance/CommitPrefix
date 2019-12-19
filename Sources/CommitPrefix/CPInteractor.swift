@@ -73,7 +73,10 @@ struct CPInteractor {
             throw CPTermination.branchValidatorNotPresent
         }
         
-        let branch = Shell.currentBranch() ?? ""
+        guard let branch = try? gitHEADFile.readAsString(encodedAs: .utf8) else {
+            throw CPTermination.unableToReadHEAD
+        }
+        
         let matches = branch.occurances(ofRegex: regexValue)
         
         guard matches.count > 0 else {
