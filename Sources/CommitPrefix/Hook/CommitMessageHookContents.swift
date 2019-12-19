@@ -37,7 +37,7 @@ struct CommitMessageHookContents {
     }
     
     func renderScript() -> String { """
-        #!/usr/bin/swift
+        #!/usr/bin/env swift
         //
         // Commit-msg
         //
