@@ -12,6 +12,8 @@ There's also a branch parse mode that allows commitPrefix to parse the current b
 
 Prefixes can be re-assigned or deleted at any time. Additionally, this is a git repository specific tool, meaning that stored prefixes are specific to the repository you're in.
 
+CommitPrefix has been verified to work both from the command line as well as with GUI based Git Clients like Tower.
+
 The actions that can be done are:
 
 * Store an arbitrary number of commit prefixes
