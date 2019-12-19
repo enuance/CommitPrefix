@@ -31,22 +31,26 @@ struct CPInteractor {
     
     private let commitPrefixFile: File
     private let commitPrefixModel: CPModel
+    private let gitHEADFile: File
     
     init (gitDirectory: Folder) throws {
-        let (commitPrefixFile, commitPrefixModel) = try Self.build(using: gitDirectory)
+        let (commitPrefixFile, commitPrefixModel, gitHEADFile) = try Self.build(using: gitDirectory)
         self.commitPrefixFile = commitPrefixFile
         self.commitPrefixModel = commitPrefixModel
+        self.gitHEADFile = gitHEADFile
     }
     
-    private static func build(using gitDirectory: Folder) throws -> (File, CPModel) {
+    private static func build(using gitDirectory: Folder) throws -> (File, CPModel, File) {
         do {
             let initialModelData = try JSONEncoder().encode(CPModel.empty())
             let cpFile = try gitDirectory.createFileIfNeeded(
                 withName: FileName.commitPrefix,
-                contents: initialModelData)
+                contents: initialModelData
+            )
             let cpFileData = try cpFile.read()
             let cpModel = try JSONDecoder().decode(CPModel.self, from: cpFileData)
-            return (cpFile, cpModel)
+            let headFile = try gitDirectory.file(named: "HEAD")
+            return (cpFile, cpModel, headFile)
         } catch {
             cpDebugPrint(error)
             throw CPError.fileReadWriteError
