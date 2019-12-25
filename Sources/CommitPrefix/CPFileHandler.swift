@@ -24,6 +24,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Consler
 import Foundation
 import Files
 
@@ -40,40 +41,40 @@ struct CPFileHandler {
         try CommitMessageHook.findOrCreate(with: gitDirectory)
     }
     
-    func outputPrefixes() throws -> String {
+    func outputPrefixes() throws -> ConslerOutput {
         try cpInteractor.outputPrefixes()
     }
     
-    func viewState() throws -> String {
+    func viewState() throws -> ConslerOutput {
         let cpState = try cpInteractor.getCommitPrefixState()
         switch cpState.mode {
         case .normal:
-            return """
-            CommitPrefix MODE NORMAL
-            - prefixes: \(cpState.normalPrefixes.joined())
-            """
+            return ConslerOutput(values: [
+                "CommitPrefix ", "MODE NORMAL",
+                "- prefixes: ", cpState.normalPrefixes.joined()])
+                .describedBy(.normal, .cyanEndsLine, .normal, .cyan)
         case .branchParse:
-            return """
-            CommitPrefix MODE BRANCH_PARSE
-            - branch prefixes: \(cpState.branchPrefixes.joined())
-            - stored prefixes: \(cpState.normalPrefixes.joined())
-            """
+            return ConslerOutput(values: [
+                "CommitPrefix ", "MODE BRANCH_PARSE",
+                "- branch prefixes: ", cpState.branchPrefixes.joined(),
+                "- stored prefixes: ", cpState.normalPrefixes.joined()])
+                .describedBy(.normal, .cyanEndsLine, .normal, .cyanEndsLine, .normal, .cyan)
         }
     }
     
-    func deletePrefixes() throws -> String {
+    func deletePrefixes() throws -> ConslerOutput {
         try cpInteractor.deletePrefixes()
     }
     
-    func writeNew(prefixes rawValue: String) throws -> String {
+    func writeNew(prefixes rawValue: String) throws -> ConslerOutput {
         try cpInteractor.writeNew(prefixes: rawValue)
     }
     
-    func activateBranchMode(with validator: String) throws -> String {
+    func activateBranchMode(with validator: String) throws -> ConslerOutput {
         try cpInteractor.activateBranchMode(with: validator)
     }
     
-    func activateNormalMode() throws -> String {
+    func activateNormalMode() throws -> ConslerOutput {
         try cpInteractor.activateNormalMode()
     }
     
