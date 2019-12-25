@@ -76,7 +76,7 @@ struct CLIArguments {
     private func singleCommandParse(_ allCommands: [ParsedCommand]) throws -> UserCommand {
         precondition(allCommands.count == 1, "Intended for single Parsed Command only!")
         guard let foundCommand = allCommands.first else {
-            throw CPError.userCommandNotRecognized
+            throw CPError.commandNotRecognized
         }
         
         switch foundCommand {
@@ -91,7 +91,7 @@ struct CLIArguments {
         case .userEntry(value: let prefixes):
             return .newPrefixes(value: prefixes)
         default:
-            throw CPError.userCommandNotRecognized
+            throw CPError.commandNotRecognized
         }
     }
     
@@ -106,13 +106,13 @@ struct CLIArguments {
         case (.userEntry(value: let validator), .modeBranchParse):
             return .modeBranchParse(validator: validator)
         default:
-            throw CPError.userCommandNotRecognized
+            throw CPError.commandNotRecognized
         }
     }
     
     func getCommand() throws -> UserCommand {
         guard let parsedArgs = try? parser.parse(rawArgs) else {
-            throw CPError.userCommandNotRecognized
+            throw CPError.commandNotRecognized
         }
         
         var allCommands = [ParsedCommand]()
@@ -125,7 +125,7 @@ struct CLIArguments {
         
         try parsedArgs.get(userEntry).map { userEntry in
             let noMoreThanOneEntry = userEntry.count < 2
-            guard noMoreThanOneEntry else { throw CPError.newEntryShouldNotHaveSpaces }
+            guard noMoreThanOneEntry else { throw CPError.invalidEntryFormat }
             guard let theEntry = userEntry.first else { throw CPError.emptyEntry }
             allCommands.append(.userEntry(value: theEntry))
         }
@@ -138,7 +138,7 @@ struct CLIArguments {
         case 2:
             return try doubleCommandParse(allCommands)
         default:
-            throw CPError.multipleArguments
+            throw CPError.tooManyArguments
         }
         
     }
