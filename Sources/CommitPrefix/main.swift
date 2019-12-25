@@ -24,6 +24,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Consler
 import Foundation
 
 let cpCommandLineInterface = CLIArguments()
@@ -33,53 +34,54 @@ do {
     switch try cpCommandLineInterface.getCommand() {
         
     case .outputVersion:
-        let version = CPInfo.version
-        print("commitPrefix version \(version)")
+        Consler.output(
+            "CommitPrefix ", "version ", CPInfo.version,
+            descriptors: [.normal, .cyan, .cyan])
         
     case .viewState:
         let fileHandler = try CPFileHandler()
-        let currentState = try fileHandler.viewState()
-        print(currentState)
+        let viewStateOutput = try fileHandler.viewState()
+        Consler.output(viewStateOutput)
         
     case .outputPrefixes:
         let fileHandler = try CPFileHandler()
-        let prefixOutput = try fileHandler.outputPrefixes()
-        print(prefixOutput)
+        let prefixesOutput = try fileHandler.outputPrefixes()
+        Consler.output(prefixesOutput)
         
     case .deletePrefixes:
         let fileHandler = try CPFileHandler()
-        let deletionMessage = try fileHandler.deletePrefixes()
-        print(deletionMessage)
+        let deletionOutput = try fileHandler.deletePrefixes()
+        Consler.output(deletionOutput)
     
     case .modeNormal:
         let fileHandler = try CPFileHandler()
-        let modeSetMessage = try fileHandler.activateNormalMode()
-        print(modeSetMessage)
+        let normalModeOutput = try fileHandler.activateNormalMode()
+        Consler.output(normalModeOutput)
         
     case .modeBranchParse(validator: let rawValidatorValue):
         let fileHandler = try CPFileHandler()
-        let modeSetMessage = try fileHandler.activateBranchMode(with: rawValidatorValue)
-        print(modeSetMessage)
+        let branchModeOutput = try fileHandler.activateBranchMode(with: rawValidatorValue)
+        Consler.output(branchModeOutput)
         
     case .newPrefixes(value: let rawPrefixValue):
         let fileHandler = try CPFileHandler()
-        let storedPrefixesMessage = try fileHandler.writeNew(prefixes: rawPrefixValue)
-        print(storedPrefixesMessage)
+        let newPrefixesOutput = try fileHandler.writeNew(prefixes: rawPrefixValue)
+        Consler.output(newPrefixesOutput)
         
     }
     
 } catch let prefixError as CPError {
     
-    print(prefixError.message)
-    
-} catch let terminationError as CPTermination {
-    
-    print(terminationError.message)
-    exit(0)
+    Consler.output(prefixError.message ,type: .error)
+    exit(prefixError.status.value)
     
 } catch {
     
-    print("Unexpected Error: ", error)
-    exit(0)
+    Consler.output(
+        "Unexpected Error: ", error.localizedDescription,
+        descriptors: [.boldRed, .normal],
+        type: .error)
+    
+    exit(TerminationStatus.unexpectedError.value)
     
 }
