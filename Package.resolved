@@ -2,6 +2,15 @@
   "object": {
     "pins": [
       {
+        "package": "Consler",
+        "repositoryURL": "https://github.com/enuance/consler",
+        "state": {
+          "branch": null,
+          "revision": "440cda5566fdabae879cbb5cef4576a21dea7d4c",
+          "version": "0.2.0"
+        }
+      },
+      {
         "package": "Files",
         "repositoryURL": "https://github.com/JohnSundell/Files",
         "state": {

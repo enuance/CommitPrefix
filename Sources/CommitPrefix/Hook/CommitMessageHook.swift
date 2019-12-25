@@ -24,6 +24,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Consler
 import Files
 import Foundation
 
@@ -62,7 +63,7 @@ struct CommitMessageHook {
                 cpDebugPrint(commitHookFile.path)
                 Shell.makeExecutable(commitHookFile.path)
             } catch {
-                throw CPError.hookReadWriteError
+                throw CPError.hookFileIOError
             }
             
             return nil
@@ -74,27 +75,32 @@ struct CommitMessageHook {
     }
     
     private func overwriteCommitHook(_ commitHookFile: File) throws {
-        print("There seems to be an existing commit-msg found in the hooks directory")
-        print("Would you like to overwrite? [y/n]")
+        Consler.output(
+            ["", "There seems to be an existing commit-msg found in the hooks directory",
+            "- Would you like to overwrite? [y/n]", ""],
+            descriptors: [.endsLine, .yellowEndsLine, .yellow])
+        
         let answer = readLine() ?? ""
         
         switch answer {
             
         case "y":
-            print("Overwritting existing commit-msg with generated hook")
+            Consler.output(
+                ["","Overwriting existing commit-msg with generated hook", ""],
+                descriptors: [.endsLine, .cyanEndsLine])
             
             do {
                 // TODO: - Theres a case where the file is not executable in the first place this will not correct that
                 try commitHookFile.write(cmHookContents.renderScript(), encoding: .utf8)
             } catch {
-                throw CPError.hookReadWriteError
+                throw CPError.hookFileIOError
             }
             
         case "n":
-            throw CPTermination.overwriteCancelled
+            throw CPError.overwriteCancelled
             
         default:
-            throw CPTermination.expectedYesOrNo
+            throw CPError.invalidYesOrNoFormat
             
         }
     }
@@ -102,7 +108,7 @@ struct CommitMessageHook {
     private func hookIsCommitPrefix(_ hookFile: File) throws -> Bool {
         
         guard let hookContents = try? hookFile.readAsString(encodedAs: .utf8) else {
-            throw CPError.hookReadWriteError
+            throw CPError.hookFileIOError
         }
         
         return hookContents.contains(cmHookContents.fileIdentifier)

@@ -60,6 +60,7 @@ struct CommitMessageHookContents {
             
             case invalidArgument
             case overwriteError
+            case commitPrefixError
             
             var message: String {
                 switch self {
@@ -67,6 +68,11 @@ struct CommitMessageHookContents {
                     return "Intended to recieve .git/COMMIT_EDITMSG arg"
                 case .overwriteError:
                     return "There was an error writting to the commit message"
+                case .commitPrefixError:
+                    return \"\"\"
+        
+                    - CommitPrefix Error
+                    \"\"\"
                 }
             }
             
@@ -95,7 +101,7 @@ struct CommitMessageHookContents {
     }
     
     private func renderIOCPMethodGetPrefixes() -> String { """
-        func getPrefixes() -> String {
+        func getPrefixes() throws -> String {
             let readProcess = Process()
             readProcess.launchPath = "/usr/bin/env"
         
@@ -111,6 +117,10 @@ struct CommitMessageHookContents {
             readProcess.launch()
             
             readProcess.waitUntilExit()
+            
+            if readProcess.terminationStatus != 0 {
+              throw IOError.commitPrefixError
+            }
             
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let contents = String(data: data, encoding: .utf8)
@@ -156,7 +166,7 @@ struct CommitMessageHookContents {
             
             let ioCommitPrefix = try IOCommitPrefix()
             
-            let prefixes = ioCommitPrefix.getPrefixes()
+            let prefixes = try ioCommitPrefix.getPrefixes()
                 .trimmingCharacters(in: .newlines)
             
             let commitMessage = ioCommitPrefix.getCommitMessage()
@@ -167,8 +177,9 @@ struct CommitMessageHookContents {
             
         } catch let ioError as IOError {
             
-            print(ioError)
-            
+            print(ioError.message)
+            exit(1)
+        
         }
         """
     }
