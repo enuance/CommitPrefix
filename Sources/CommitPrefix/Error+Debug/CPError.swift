@@ -24,71 +24,158 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Consler
 import Foundation
+
+enum TerminationStatus: Int32 {
+    /// Used when the app finishes as expected
+    case successful
+    
+    /// Used when an error that has not been accounted for has been thrown
+    case unexpectedError
+    
+    /// Used when the user takes an action that stops the application short
+    case userInitiated
+    
+    /// Used when the inputs provided to the app are invalid
+    case invalidInputs
+    
+    /// Used when the app can no longer continue due to user specified settings
+    case invalidContext
+    
+    /// Used when required resources are inaccessible or unavailable
+    case unavailableDependencies
+    
+    var value: Int32 { self.rawValue }
+}
 
 enum CPError: Error {
     
-    case userCommandNotRecognized
-    case newEntryShouldNotHaveSpaces
+    // MARK: - CLI Errors
+    case commandNotRecognized
+    case tooManyArguments
     case emptyEntry
-    case multipleArguments
-    case notAGitRepo(currentLocation: String)
-    case fileReadWriteError
-    case directoryNotFound(name: String, path: String)
-    case hookReadWriteError
-    case branchValidatorFormatError
     
-    var message: String {
+    // MARK: - User Termination Errors
+    case overwriteCancelled
+    
+    // MARK: - Format Errors
+    case invalidEntryFormat
+    case invalidBranchValidatorFormat
+    case invalidBranchPrefix(validator: String)
+    case invalidYesOrNoFormat
+    
+    // MARK: - Dependency Location Errors
+    case notAGitRepo(currentLocation: String)
+    case directoryNotFound(name: String, path: String)
+    case branchValidatorNotFound
+    
+    // MARK: - Read/Write Errors
+    case cpFileIOError
+    case hookFileIOError
+    case headFileIOError
+    
+    var message: ConslerOutput {
         switch self {
-        case .userCommandNotRecognized:
-            return "Command not recognized. Enter \"--help\" for usage."
-        case .newEntryShouldNotHaveSpaces:
-            return "Your entry contains invalid spaces."
+            
+        case .commandNotRecognized:
+            return ConslerOutput(
+                "Error: ", "Command not recognized. Enter ", "\"--help\"", " for usage.")
+                .describedBy(.boldRed, .normal, .cyan)
+            
+        case .tooManyArguments:
+            return ConslerOutput(
+                "Error: ", "Too many arguments entered. Only two at a time is supported.")
+                .describedBy(.boldRed)
+            
         case .emptyEntry:
-            return "Your entry is empty."
-        case .multipleArguments:
-            return "Too many arguments entered. Only two at a time is supported."
+            return ConslerOutput("Error: ", "Your entry is empty.").describedBy(.boldRed)
+            
+        case .overwriteCancelled:
+            return ConslerOutput("Error: ", "Overwrite is cancelled").describedBy(.boldRed)
+            
+        case .invalidEntryFormat:
+            return ConslerOutput("Error: ", "Your entry contains invalid spaces.")
+                .describedBy(.boldRed)
+            
+        case .invalidBranchValidatorFormat:
+            return ConslerOutput(
+                "Error: ", "The branch validator must be at least two characters long ",
+                "and contain no numbers or spaces")
+                .describedBy(.boldRed)
+            
+        case .invalidBranchPrefix(validator: let validator):
+            return ConslerOutput(
+                "Error: ", "Your branch does not begin with", " \(validator)", " and is invalid.",
+                "Either: ", "change your branch name", " or ", "use commitPrefix in MODE NORMAL.")
+                .describedBy(.boldRed, .normal, .yellow, .endsLine, .normal, .cyan, .normal, .cyan)
+            
+        case .invalidYesOrNoFormat:
+            return ConslerOutput("Error: ", "Expected y or n. The transaction has been cancelled.")
+                .describedBy(.boldRed)
+            
         case .notAGitRepo(currentLocation: let location):
-            return "Not in a git repo or at the root of one: \(location)"
-        case .fileReadWriteError:
-            return "An error occured while reading or writing to the CommitPrefix files"
+            return ConslerOutput(
+                "Error: ", "Not in a git repo or at the root of one: ", "\(location)")
+                .describedBy(.boldRed, .normal, .yellow)
+            
         case .directoryNotFound(name: let name, path: let path):
-            return "Directory named \(name) was not found at \(path)"
-        case .hookReadWriteError:
-            return "An error occured while reading or writing to the commit-msg hook"
-        case .branchValidatorFormatError:
-            return "The branch validator must be at least two characters long "
-            + "and contain no numbers or spaces"
+            return ConslerOutput(
+                "Error: ", "Directory named ", "\(name)", " was not found at ", "\(path)")
+                .describedBy(.boldRed, .normal, .yellow, .normal, .yellow)
+            
+        case .branchValidatorNotFound:
+            return ConslerOutput(
+                "Error: ", "Attempting to provide a branch prefix without a branch validator")
+                .describedBy(.boldRed)
+            
+        case .cpFileIOError:
+            return ConslerOutput(
+                "Error: ", "An error occured while reading or writing to the CommitPrefix files")
+                .describedBy(.boldRed)
+            
+        case .hookFileIOError:
+            return ConslerOutput(
+                "Error: ", "An error occured while reading or writing to the commit-msg hook")
+                .describedBy(.boldRed)
+            
+        case .headFileIOError:
+            return ConslerOutput("Error: ", "Unable to read the git HEAD for branch information")
+                .describedBy(.boldRed)
         }
         
     }
     
-}
-
-/// An Error Type that should terminate the program if detected
-enum CPTermination: Error {
-    
-    case overwriteCancelled
-    case expectedYesOrNo
-    case branchValidatorNotPresent
-    case invalidBranchPrefix(validator: String)
-    case unableToReadHEAD
-    
-    var message: String {
+    var status: TerminationStatus {
         switch self {
+        case .commandNotRecognized:
+            return .invalidInputs
+        case .tooManyArguments:
+            return .invalidInputs
+        case .emptyEntry:
+            return .invalidInputs
         case .overwriteCancelled:
-            return "Overwrite is cancelled"
-        case .expectedYesOrNo:
-            return "Expected y or n. The transaction has been cancelled."
-        case .branchValidatorNotPresent:
-            return "Attempting to provide a branch prefix without a branch validator"
-        case .invalidBranchPrefix(validator: let validator):
-            return """
-            Your branch does not begin with \(validator) and is invalid.
-            Either change your branch name or use commitPrefix in non-branch mode.
-            """
-        case .unableToReadHEAD:
-            return "Unable to read the git HEAD for branch information"
+            return .userInitiated
+        case .invalidEntryFormat:
+            return .invalidInputs
+        case .invalidBranchValidatorFormat:
+            return .invalidInputs
+        case .invalidBranchPrefix:
+            return .invalidContext
+        case .invalidYesOrNoFormat:
+            return .invalidInputs
+        case .notAGitRepo:
+            return .unavailableDependencies
+        case .directoryNotFound:
+            return .unavailableDependencies
+        case .branchValidatorNotFound:
+            return .unavailableDependencies
+        case .cpFileIOError:
+            return .unavailableDependencies
+        case .hookFileIOError:
+            return .unavailableDependencies
+        case .headFileIOError:
+            return .unavailableDependencies
         }
         
     }
