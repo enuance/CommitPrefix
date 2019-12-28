@@ -11,7 +11,7 @@ let package = Package(
         // 🧰 SPMUtilities for CLI Argument Parsing.
         .package(url: "https://github.com/apple/swift-package-manager", from: "0.5.0"),
         // Consler for Styled outputs to the Console
-        .package(url: "https://github.com/enuance/consler", from: "0.2.0")
+        .package(url: "https://github.com/enuance/consler", from: "0.4.0")
     ],
     targets: [
         .target(

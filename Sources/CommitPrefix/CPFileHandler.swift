@@ -49,15 +49,15 @@ struct CPFileHandler {
         let cpState = try cpInteractor.getCommitPrefixState()
         switch cpState.mode {
         case .normal:
-            return ConslerOutput(values: [
+            return ConslerOutput(
                 "CommitPrefix ", "MODE NORMAL",
-                "- prefixes: ", cpState.normalPrefixes.joined()])
+                "- prefixes: ", cpState.normalPrefixes.joined())
                 .describedBy(.normal, .cyanEndsLine, .normal, .cyan)
         case .branchParse:
-            return ConslerOutput(values: [
+            return ConslerOutput(
                 "CommitPrefix ", "MODE BRANCH_PARSE",
                 "- branch prefixes: ", cpState.branchPrefixes.joined(),
-                "- stored prefixes: ", cpState.normalPrefixes.joined()])
+                "- stored prefixes: ", cpState.normalPrefixes.joined())
                 .describedBy(.normal, .cyanEndsLine, .normal, .cyanEndsLine, .normal, .cyan)
         }
     }
