@@ -1,10 +1,10 @@
 //
-//  CPDebugPrint.swift
+//  CPInterface.swift
 //  commitPrefix
 //
 //  MIT License
 //
-//  Copyright (c) 2019 STEPHEN L. MARTINEZ
+//  Copyright (c) 2020 STEPHEN L. MARTINEZ
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -24,26 +24,23 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import Consler
 import Foundation
 
-#if DEBUG
-private let isDebugMode = true
-#else
-private let isDebugMode = false
-#endif
-
-/// A Debug Printer that only prints in debug mode
-func cpDebugPrint(_ value: Any, file: String = #file, line: Int = #line, function: String = #function) {
-    guard isDebugMode else { return }
-    let debugOutput = """
+protocol CPInterface {
     
-      ********** Commit Prefix Debug **********
-        File: \(file)
-        Line: \(line)
-        Function: \(function)
-        value: \(value)
-      *****************************************
+    func outputVersion() -> ConslerOutput
     
-    """
-    print(debugOutput)
+    func outputPrefixes() throws -> ConslerOutput
+    
+    func viewState() throws -> ConslerOutput
+    
+    func deletePrefixes() throws -> ConslerOutput
+    
+    func writeNew(prefixes rawValue: String) throws -> ConslerOutput
+    
+    func activateBranchMode(with validator: String) throws -> ConslerOutput
+    
+    func activateNormalMode() throws -> ConslerOutput
+    
 }

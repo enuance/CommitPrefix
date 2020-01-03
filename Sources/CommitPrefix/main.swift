@@ -27,45 +27,39 @@
 import Consler
 import Foundation
 
-let cpCommandLineInterface = CLIArguments()
+let commandLineInterface = CLIArguments()
+let cpInterface = CommitPrefix.interface()
 
 do {
     
-    switch try cpCommandLineInterface.getCommand() {
+    switch try commandLineInterface.getCommand() {
         
     case .outputVersion:
-        Consler.output(
-            "CommitPrefix ", "version ", CPInfo.version,
-            descriptors: [.normal, .cyan, .cyan])
+        let versionOutput = cpInterface.outputVersion()
+        Consler.output(versionOutput)
         
     case .viewState:
-        let fileHandler = try CPFileHandler()
-        let viewStateOutput = try fileHandler.viewState()
+        let viewStateOutput = try cpInterface.viewState()
         Consler.output(viewStateOutput)
         
     case .outputPrefixes:
-        let fileHandler = try CPFileHandler()
-        let prefixesOutput = try fileHandler.outputPrefixes()
+        let prefixesOutput = try cpInterface.outputPrefixes()
         Consler.output(prefixesOutput)
         
     case .deletePrefixes:
-        let fileHandler = try CPFileHandler()
-        let deletionOutput = try fileHandler.deletePrefixes()
+        let deletionOutput = try cpInterface.deletePrefixes()
         Consler.output(deletionOutput)
     
     case .modeNormal:
-        let fileHandler = try CPFileHandler()
-        let normalModeOutput = try fileHandler.activateNormalMode()
+        let normalModeOutput = try cpInterface.activateNormalMode()
         Consler.output(normalModeOutput)
         
     case .modeBranchParse(validator: let rawValidatorValue):
-        let fileHandler = try CPFileHandler()
-        let branchModeOutput = try fileHandler.activateBranchMode(with: rawValidatorValue)
+        let branchModeOutput = try cpInterface.activateBranchMode(with: rawValidatorValue)
         Consler.output(branchModeOutput)
         
     case .newPrefixes(value: let rawPrefixValue):
-        let fileHandler = try CPFileHandler()
-        let newPrefixesOutput = try fileHandler.writeNew(prefixes: rawPrefixValue)
+        let newPrefixesOutput = try cpInterface.writeNew(prefixes: rawPrefixValue)
         Consler.output(newPrefixesOutput)
         
     }

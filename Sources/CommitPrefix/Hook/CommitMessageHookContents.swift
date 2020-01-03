@@ -30,13 +30,16 @@ struct CommitMessageHookContents {
     
     let fileIdentifier = "Created by CommitPrefix \(CPInfo.version)"
     
+    private let tab = "<tab>"
+    
     private var currentDate: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MM/dd/yyyy"
         return formatter.string(from: Date())
     }
     
-    func renderScript() -> String { """
+    func renderScript() -> String {
+        let script = """
         #!/usr/bin/env swift
         //
         // Commit-msg
@@ -45,7 +48,7 @@ struct CommitMessageHookContents {
         //
         
         import Foundation
-
+        
         \(renderEnumIOError())
         
         \(renderStructIOCommitPrefix())
@@ -53,28 +56,30 @@ struct CommitMessageHookContents {
         \(renderMainDoTryCatch())
         
         """
+        
+        return script.replacingOccurrences(of: tab, with: "    ")
     }
     
     private func renderEnumIOError() -> String { """
         enum IOError: Error {
             
-            case invalidArgument
-            case overwriteError
-            case commitPrefixError
+        \(tab)case invalidArgument
+        \(tab)case overwriteError
+        \(tab)case commitPrefixError
             
-            var message: String {
-                switch self {
-                case .invalidArgument:
-                    return "Intended to recieve .git/COMMIT_EDITMSG arg"
-                case .overwriteError:
-                    return "There was an error writting to the commit message"
-                case .commitPrefixError:
-                    return \"\"\"
+        \(tab)var message: String {
+        \(tab + tab)switch self {
+        \(tab + tab)case .invalidArgument:
+        \(tab + tab + tab)return "Intended to recieve .git/COMMIT_EDITMSG arg"
+        \(tab + tab)case .overwriteError:
+        \(tab + tab + tab)return "There was an error writting to the commit message"
+        \(tab + tab)case .commitPrefixError:
+        \(tab + tab + tab)return \"\"\"
         
-                    - CommitPrefix Error
-                    \"\"\"
-                }
-            }
+        \(tab + tab + tab)- CommitPrefix Error
+        \(tab + tab + tab)\"\"\"
+        \(tab + tab)}
+        \(tab)}
             
         }
         """
@@ -83,102 +88,102 @@ struct CommitMessageHookContents {
     private func renderStructIOCommitPrefix() -> String { """
         struct IOCommitPrefix {
             
-            let commitMsgPath: String
+        \(tab)let commitMsgPath: String
             
-            init(filePath: [String] = Array(CommandLine.arguments.dropFirst())) throws {
-                guard let firstArg = filePath.first else { throw IOError.invalidArgument }
-                self.commitMsgPath = firstArg
-            }
+        \(tab)init(filePath: [String] = Array(CommandLine.arguments.dropFirst())) throws {
+        \(tab + tab)guard let firstArg = filePath.first else { throw IOError.invalidArgument }
+        \(tab + tab)self.commitMsgPath = firstArg
+        \(tab)}
             
-            \(renderIOCPMethodGetPrefixes())
+        \(renderIOCPMethodGetPrefixes())
             
-            \(renderIOCPMethodGetCommitMessage())
+        \(renderIOCPMethodGetCommitMessage())
         
-            \(renderIOCPMethodOverwriteContents())
-            
+        \(renderIOCPMethodOverwriteContents())
+        
         }
         """
     }
     
     private func renderIOCPMethodGetPrefixes() -> String { """
-        func getPrefixes() throws -> String {
-            let readProcess = Process()
-            readProcess.launchPath = "/usr/bin/env"
+        \(tab)func getPrefixes() throws -> String {
+        \(tab + tab)let readProcess = Process()
+        \(tab + tab)readProcess.launchPath = "/usr/bin/env"
         
-            var readProcessEnv = ProcessInfo.processInfo.environment
-            let paths = readProcessEnv["PATH"]
-            paths.map { readProcessEnv["PATH"] = "/usr/local/bin:\\($0)" }
+        \(tab + tab)var readProcessEnv = ProcessInfo.processInfo.environment
+        \(tab + tab)let paths = readProcessEnv["PATH"]
+        \(tab + tab)paths.map { readProcessEnv["PATH"] = "/usr/local/bin:\\($0)" }
         
-            readProcess.environment = readProcessEnv
-            readProcess.arguments = ["commitPrefix", "-o"]
+        \(tab + tab)readProcess.environment = readProcessEnv
+        \(tab + tab)readProcess.arguments = ["commitPrefix", "-o"]
             
-            let pipe = Pipe()
-            readProcess.standardOutput = pipe
-            readProcess.launch()
+        \(tab + tab)let pipe = Pipe()
+        \(tab + tab)readProcess.standardOutput = pipe
+        \(tab + tab)readProcess.launch()
             
-            readProcess.waitUntilExit()
+        \(tab + tab)readProcess.waitUntilExit()
             
-            if readProcess.terminationStatus != 0 {
-              throw IOError.commitPrefixError
-            }
+        \(tab + tab)if readProcess.terminationStatus != 0 {
+        \(tab + tab + tab)throw IOError.commitPrefixError
+        \(tab + tab)}
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let contents = String(data: data, encoding: .utf8)
+        \(tab + tab)let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        \(tab + tab)let contents = String(data: data, encoding: .utf8)
             
-            return contents ?? ""
-        }
+        \(tab + tab)return contents ?? ""
+        \(tab)}
         """
     }
     
     private func renderIOCPMethodGetCommitMessage() -> String { """
-        func getCommitMessage() -> String {
-            let readProcess = Process()
-            readProcess.launchPath = "/usr/bin/env"
-            readProcess.arguments = ["cat", commitMsgPath]
+        \(tab)func getCommitMessage() -> String {
+        \(tab + tab)let readProcess = Process()
+        \(tab + tab)readProcess.launchPath = "/usr/bin/env"
+        \(tab + tab)readProcess.arguments = ["cat", commitMsgPath]
             
-            let pipe = Pipe()
-            readProcess.standardOutput = pipe
-            readProcess.launch()
+        \(tab + tab)let pipe = Pipe()
+        \(tab + tab)readProcess.standardOutput = pipe
+        \(tab + tab)readProcess.launch()
             
-            readProcess.waitUntilExit()
+        \(tab + tab)readProcess.waitUntilExit()
             
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let contents = String(data: data, encoding: .utf8)
+        \(tab + tab)let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        \(tab + tab)let contents = String(data: data, encoding: .utf8)
             
-            return contents ?? ""
-        }
+        \(tab + tab)return contents ?? ""
+        \(tab)}
         """
     }
     
     private func renderIOCPMethodOverwriteContents() -> String { """
-        func overwriteContents(with contents: String) throws {
-            do {
-                try contents.write(toFile: commitMsgPath, atomically: true, encoding: .utf8)
-            } catch {
-                throw IOError.overwriteError
-            }
-        }
+        \(tab)func overwriteContents(with contents: String) throws {
+        \(tab + tab)do {
+        \(tab + tab + tab)try contents.write(toFile: commitMsgPath, atomically: true, encoding: .utf8)
+        \(tab + tab)} catch {
+        \(tab + tab + tab)throw IOError.overwriteError
+        \(tab + tab)}
+        \(tab)}
         """
     }
     
     private func renderMainDoTryCatch() -> String { """
         do {
             
-            let ioCommitPrefix = try IOCommitPrefix()
+        \(tab)let ioCommitPrefix = try IOCommitPrefix()
             
-            let prefixes = try ioCommitPrefix.getPrefixes()
-                .trimmingCharacters(in: .newlines)
+        \(tab)let prefixes = try ioCommitPrefix.getPrefixes()
+        \(tab + tab).trimmingCharacters(in: .newlines)
             
-            let commitMessage = ioCommitPrefix.getCommitMessage()
-                .trimmingCharacters(in: .newlines)
+        \(tab)let commitMessage = ioCommitPrefix.getCommitMessage()
+        \(tab + tab).trimmingCharacters(in: .newlines)
             
-            let newCommitMessage = [prefixes, commitMessage].joined(separator: " ")
-            try ioCommitPrefix.overwriteContents(with: newCommitMessage)
+        \(tab)let newCommitMessage = [prefixes, commitMessage].joined(separator: " ")
+        \(tab)try ioCommitPrefix.overwriteContents(with: newCommitMessage)
             
         } catch let ioError as IOError {
             
-            print(ioError.message)
-            exit(1)
+        \(tab)print(ioError.message)
+        \(tab)exit(1)
         
         }
         """
