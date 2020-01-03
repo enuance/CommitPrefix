@@ -27,7 +27,9 @@
 import Consler
 import Foundation
 
-public protocol CPInterface {
+protocol CPInterface {
+    
+    func outputVersion() -> ConslerOutput
     
     func outputPrefixes() throws -> ConslerOutput
     
