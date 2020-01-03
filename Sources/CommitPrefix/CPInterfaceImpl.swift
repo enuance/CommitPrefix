@@ -1,5 +1,5 @@
 //
-//  CPFileHandler.swift
+//  CPInterfaceImpl.swift
 //  commitPrefix
 //
 //  MIT License
@@ -25,12 +25,14 @@
 //  SOFTWARE.
 
 import Consler
-import Foundation
 import Files
+import Foundation
 
-struct CommitPrefix: CPInterface {
+struct CommitPrefix {
     
     private init() {}
+    
+    static func interface() -> CPInterface { CommitPrefix() }
     
     private func getInteractor() throws -> CPInteractor {
         guard Folder.current.containsSubfolder(named: FolderName.git) else {
@@ -42,11 +44,20 @@ struct CommitPrefix: CPInterface {
         return cpInteractor
     }
     
-    public static func interface() -> CPInterface { CommitPrefix() }
+}
+
+// MARK: - CPInterface Conformances
+extension CommitPrefix: CPInterface {
     
     func outputPrefixes() throws -> ConslerOutput {
         let cpInteractor = try getInteractor()
         return try cpInteractor.outputPrefixes()
+    }
+    
+    func outputVersion() -> ConslerOutput {
+        return ConslerOutput(
+            "CommitPrefix ", "version ", CPInfo.version)
+            .describedBy(.normal, .cyan, .cyan)
     }
     
     func viewState() throws -> ConslerOutput {
