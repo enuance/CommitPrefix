@@ -29,53 +29,35 @@ import Foundation
 
 let commandLineInterface = CLIArguments()
 let cpInterface = CommitPrefix.interface()
-
-do {
     
-    switch try commandLineInterface.getCommand() {
-        
-    case .outputVersion:
-        let versionOutput = cpInterface.outputVersion()
-        Consler.output(versionOutput)
-        
-    case .viewState:
-        let viewStateOutput = try cpInterface.viewState()
-        Consler.output(viewStateOutput)
-        
-    case .outputPrefixes:
-        let prefixesOutput = try cpInterface.outputPrefixes()
-        Consler.output(prefixesOutput)
-        
-    case .deletePrefixes:
-        let deletionOutput = try cpInterface.deletePrefixes()
-        Consler.output(deletionOutput)
+switch commandLineInterface.command {
     
-    case .modeNormal:
-        let normalModeOutput = try cpInterface.activateNormalMode()
-        Consler.output(normalModeOutput)
-        
-    case .modeBranchParse(validator: let rawValidatorValue):
-        let branchModeOutput = try cpInterface.activateBranchMode(with: rawValidatorValue)
-        Consler.output(branchModeOutput)
-        
-    case .newPrefixes(value: let rawPrefixValue):
-        let newPrefixesOutput = try cpInterface.writeNew(prefixes: rawPrefixValue)
-        Consler.output(newPrefixesOutput)
-        
-    }
+case .outputVersion:
+    let versionOutput = cpInterface.outputVersion()
+    Consler.output(versionOutput)
     
-} catch let prefixError as CPError {
+case .viewState:
+    let viewStateOutput = cpInterface.viewState()
+    Consler.output(viewStateOutput)
     
-    Consler.output(prefixError.message ,type: .error)
-    exit(prefixError.status.value)
+case .outputPrefixes:
+    let prefixesOutput = cpInterface.outputPrefixes()
+    Consler.output(prefixesOutput)
     
-} catch {
+case .deletePrefixes:
+    let deletionOutput = cpInterface.deletePrefixes()
+    Consler.output(deletionOutput)
     
-    Consler.output(
-        "Unexpected Error: ", error.localizedDescription,
-        descriptors: [.boldRed, .normal],
-        type: .error)
+case .modeNormal:
+    let normalModeOutput = cpInterface.activateNormalMode()
+    Consler.output(normalModeOutput)
     
-    exit(TerminationStatus.unexpectedError.value)
+case .modeBranchParse(validator: let rawValidatorValue):
+    let branchModeOutput = cpInterface.activateBranchMode(with: rawValidatorValue)
+    Consler.output(branchModeOutput)
+    
+case .newPrefixes(value: let rawPrefixValue):
+    let newPrefixesOutput = cpInterface.writeNew(prefixes: rawPrefixValue)
+    Consler.output(newPrefixesOutput)
     
 }
