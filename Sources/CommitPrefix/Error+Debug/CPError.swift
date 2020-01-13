@@ -75,6 +75,9 @@ enum CPError: Error {
     case hookFileIOError
     case headFileIOError
     
+    // MARK: - Uncategorized Error
+    case unexpectedError
+    
     var message: ConslerOutput {
         switch self {
             
@@ -142,6 +145,10 @@ enum CPError: Error {
         case .headFileIOError:
             return ConslerOutput("Error: ", "Unable to read the git HEAD for branch information")
                 .describedBy(.boldRed)
+            
+        case .unexpectedError:
+            return ConslerOutput("Error: ", "An uncategorized error has occured")
+                .describedBy(.boldRed)
         }
         
     }
@@ -176,6 +183,8 @@ enum CPError: Error {
             return .unavailableDependencies
         case .headFileIOError:
             return .unavailableDependencies
+        case .unexpectedError:
+            return .unexpectedError
         }
         
     }
