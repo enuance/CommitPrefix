@@ -48,12 +48,19 @@ struct CommitMessageHook {
     /// - parameters:
     ///     - gitDirectory: A  `Folder` representing the git directory
     ///
-    static func findOrCreate(with gitDirectory: Folder) throws {
-        let cpHook = try CommitMessageHook(gitDirectory: gitDirectory)
-        try cpHook.locateOrCreateHook()
+    static func findOrCreate(with gitDirectory: Folder) -> Result<Void, CPError> {
+        do {
+            let cpHook = try CommitMessageHook(gitDirectory: gitDirectory)
+            return cpHook.locateOrCreateHook()
+        } catch let cpError as CPError {
+            return .failure(cpError)
+        } catch {
+            return .failure(.unexpectedError)
+        }
+
     }
     
-    private func getCommitHookFile() throws -> File? {
+    private func getCommitHookFile() -> Result<File, CPError> {
         
         guard let foundCommitHookFile = try? hooksDirectory.file(named: FileName.commitMessage) else {
         
@@ -62,19 +69,18 @@ struct CommitMessageHook {
                 try commitHookFile.write(cmHookContents.renderScript(), encoding: .utf8)
                 cpDebugPrint(commitHookFile.path)
                 Shell.makeExecutable(commitHookFile.path)
+                return .success(commitHookFile)
             } catch {
-                throw CPError.hookFileIOError
+                return .failure(.hookFileIOError)
             }
-            
-            return nil
             
         }
         
-        return foundCommitHookFile
+        return .success(foundCommitHookFile)
         
     }
     
-    private func overwriteCommitHook(_ commitHookFile: File) throws {
+    private func overwriteCommitHook(_ commitHookFile: File) -> Result<Void, CPError> {
         Consler.output(
             ["", "There seems to be an existing commit-msg found in the hooks directory",
             "- Would you like to overwrite? [y/n]", ""],
@@ -92,32 +98,37 @@ struct CommitMessageHook {
             do {
                 // TODO: - Theres a case where the file is not executable in the first place this will not correct that
                 try commitHookFile.write(cmHookContents.renderScript(), encoding: .utf8)
+                return .success(())
             } catch {
-                throw CPError.hookFileIOError
+                return .failure(.hookFileIOError)
             }
             
         case "n":
-            throw CPError.overwriteCancelled
+            return .failure(.overwriteCancelled)
             
         default:
-            throw CPError.invalidYesOrNoFormat
+            return .failure(.invalidYesOrNoFormat)
             
         }
     }
     
-    private func hookIsCommitPrefix(_ hookFile: File) throws -> Bool {
-        
-        guard let hookContents = try? hookFile.readAsString(encodedAs: .utf8) else {
-            throw CPError.hookFileIOError
+    private var hookIsCommitPrefix: (File) -> Result<(File, Bool), CPError> {
+        return { hookFile in
+            guard let hookContents = try? hookFile.readAsString(encodedAs: .utf8) else {
+                return .failure(.hookFileIOError)
+            }
+            return .success((hookFile, hookContents.contains(self.cmHookContents.fileIdentifier)))
         }
-        
-        return hookContents.contains(cmHookContents.fileIdentifier)
     }
     
-    private func locateOrCreateHook() throws {
-        guard let foundCommitHookFile = try getCommitHookFile() else { return }
-        guard try !hookIsCommitPrefix(foundCommitHookFile) else { return }
-        try overwriteCommitHook(foundCommitHookFile)
+    private var shouldOverwriteHook: (File, Bool) -> Result<Void, CPError> {
+        return { $1 ? .success(()) : self.overwriteCommitHook($0) }
+    }
+    
+    private func locateOrCreateHook() -> Result<Void, CPError> {
+        return getCommitHookFile()
+            .flatMap(hookIsCommitPrefix)
+            .flatMap(shouldOverwriteHook)
     }
     
 }
