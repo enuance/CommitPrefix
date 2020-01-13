@@ -31,16 +31,16 @@ protocol CPInterface {
     
     func outputVersion() -> ConslerOutput
     
-    func outputPrefixes() throws -> ConslerOutput
+    func outputPrefixes() -> ConslerOutput
     
-    func viewState() throws -> ConslerOutput
+    func viewState() -> ConslerOutput
     
-    func deletePrefixes() throws -> ConslerOutput
+    func deletePrefixes() -> ConslerOutput
     
-    func writeNew(prefixes rawValue: String) throws -> ConslerOutput
+    func writeNew(prefixes rawValue: String) -> ConslerOutput
     
-    func activateBranchMode(with validator: String) throws -> ConslerOutput
+    func activateBranchMode(with validator: String) -> ConslerOutput
     
-    func activateNormalMode() throws -> ConslerOutput
+    func activateNormalMode() -> ConslerOutput
     
 }
