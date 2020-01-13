@@ -73,46 +73,46 @@ struct CLIArguments {
         self.userEntry = argBuilder.buildUserEntryArgument(parser: parser)
     }
 
-    private func singleCommandParse(_ allCommands: [ParsedCommand]) throws -> UserCommand {
+    private func singleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CPError> {
         precondition(allCommands.count == 1, "Intended for single Parsed Command only!")
         guard let foundCommand = allCommands.first else {
-            throw CPError.commandNotRecognized
+            return .failure(.commandNotRecognized)
         }
         
         switch foundCommand {
         case .outputVersion:
-            return .outputVersion
+            return .success(.outputVersion)
         case .outputPrefixes:
-            return .outputPrefixes
+            return .success(.outputPrefixes)
         case .deletePrefixes:
-            return .deletePrefixes
+            return .success(.deletePrefixes)
         case .modeNormal:
-            return .modeNormal
+            return .success(.modeNormal)
         case .userEntry(value: let prefixes):
-            return .newPrefixes(value: prefixes)
+            return .success(.newPrefixes(value: prefixes))
         default:
-            throw CPError.commandNotRecognized
+            return .failure(.commandNotRecognized)
         }
     }
     
-    private func doubleCommandParse(_ allCommands: [ParsedCommand]) throws -> UserCommand {
+    private func doubleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CPError> {
         precondition(allCommands.count == 2, "Intended for two Parsed Commands only!")
         let firstCommand = allCommands[0]
         let secondCommand = allCommands[1]
         
         switch (firstCommand, secondCommand) {
         case (.modeBranchParse, .userEntry(value: let validator)):
-            return .modeBranchParse(validator: validator)
+            return .success(.modeBranchParse(validator: validator))
         case (.userEntry(value: let validator), .modeBranchParse):
-            return .modeBranchParse(validator: validator)
+            return .success(.modeBranchParse(validator: validator))
         default:
-            throw CPError.commandNotRecognized
+            return .failure(.commandNotRecognized)
         }
     }
     
-    func getCommand() throws -> UserCommand {
+    private func getCommand() -> Result<UserCommand, CPError> {
         guard let parsedArgs = try? parser.parse(rawArgs) else {
-            throw CPError.commandNotRecognized
+            return .failure(.commandNotRecognized)
         }
         
         var allCommands = [ParsedCommand]()
@@ -123,24 +123,32 @@ struct CLIArguments {
         parsedArgs.get(modeNormal).map { _ in allCommands.append(.modeNormal) }
         parsedArgs.get(modeBranchParse).map { _ in allCommands.append(.modeBranchParse) }
         
-        try parsedArgs.get(userEntry).map { userEntry in
-            let noMoreThanOneEntry = userEntry.count < 2
-            guard noMoreThanOneEntry else { throw CPError.invalidEntryFormat }
-            guard let theEntry = userEntry.first else { throw CPError.emptyEntry }
-            allCommands.append(.userEntry(value: theEntry))
+        do {
+            try parsedArgs.get(userEntry).map { userEntry in
+                let noMoreThanOneEntry = userEntry.count < 2
+                guard noMoreThanOneEntry else { throw CPError.invalidEntryFormat }
+                guard let theEntry = userEntry.first else { throw CPError.emptyEntry }
+                allCommands.append(.userEntry(value: theEntry))
+            }
+        } catch let cpError as CPError {
+            return .failure(cpError)
+        } catch {
+            return .failure(.unexpectedError)
         }
         
         switch allCommands.count {
         case 0:
-            return .viewState
+            return .success(.viewState)
         case 1:
-            return try singleCommandParse(allCommands)
+            return singleCommandParse(allCommands)
         case 2:
-            return try doubleCommandParse(allCommands)
+            return doubleCommandParse(allCommands)
         default:
-            throw CPError.tooManyArguments
+            return .failure(.tooManyArguments)
         }
         
     }
+    
+    var command: UserCommand { getCommand().resolveOrExit() }
     
 }
