@@ -1,10 +1,10 @@
 //
-//  main.swift
+//  Result+Extensions.swift
 //  commitPrefix
 //
 //  MIT License
 //
-//  Copyright (c) 2019 STEPHEN L. MARTINEZ
+//  Copyright (c) 2020 STEPHEN L. MARTINEZ
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -24,40 +24,32 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import Consler
 import Foundation
+import Consler
 
-let commandLineInterface = CLIArguments()
-let cpInterface = CommitPrefix.interface()
+extension Result {
     
-switch commandLineInterface.command {
+    func transform<NewSuccess>(_ newValue: NewSuccess) -> Result<NewSuccess, Failure> {
+        switch self {
+        case .success:
+          return .success(newValue)
+        case let .failure(failure):
+          return .failure(failure)
+        }
+    }
     
-case .outputVersion:
-    let versionOutput = cpInterface.outputVersion()
-    Consler.output(versionOutput)
+}
+
+extension Result where Failure == CPError {
     
-case .viewState:
-    let viewStateOutput = cpInterface.viewState()
-    Consler.output(viewStateOutput)
-    
-case .outputPrefixes:
-    let prefixesOutput = cpInterface.outputPrefixes()
-    Consler.output(prefixesOutput)
-    
-case .deletePrefixes:
-    let deletionOutput = cpInterface.deletePrefixes()
-    Consler.output(deletionOutput)
-    
-case .modeNormal:
-    let normalModeOutput = cpInterface.activateNormalMode()
-    Consler.output(normalModeOutput)
-    
-case .modeBranchParse(validator: let rawValidatorValue):
-    let branchModeOutput = cpInterface.activateBranchMode(with: rawValidatorValue)
-    Consler.output(branchModeOutput)
-    
-case .newPrefixes(value: let rawPrefixValue):
-    let newPrefixesOutput = cpInterface.writeNew(prefixes: rawPrefixValue)
-    Consler.output(newPrefixesOutput)
+    func resolveOrExit() -> Success {
+        switch self {
+        case let .success(value):
+            return value
+        case let .failure(cpError):
+            Consler.output(cpError.message, type: .error)
+            exit(cpError.status.value)
+        }
+    }
     
 }

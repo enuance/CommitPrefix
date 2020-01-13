@@ -41,6 +41,17 @@ struct CPInteractor {
         self.gitHEADFile = gitHEADFile
     }
     
+    static func create(_ gitDirectory: Folder) -> Result<CPInteractor, CPError> {
+        do {
+            let cpInteractor = try CPInteractor(gitDirectory: gitDirectory)
+            return .success(cpInteractor)
+        } catch let cpError as CPError {
+            return .failure(cpError)
+        } catch {
+            return .failure(.unexpectedError)
+        }
+    }
+    
     private static func build(using gitDirectory: Folder) throws -> (File, CPModel, File) {
         do {
             let initialModelData = try JSONEncoder().encode(CPModel.empty())
@@ -58,35 +69,36 @@ struct CPInteractor {
         }
     }
     
-    private func saveCommitPrefix(model: CPModel) throws {
+    private func saveCommitPrefix(model: CPModel) -> Result<Void, CPError> {
         do {
             let jsonEncoder = JSONEncoder()
             let modelData = try jsonEncoder.encode(model)
             try commitPrefixFile.write(modelData)
+            return .success(())
         } catch {
             cpDebugPrint(error)
-            throw CPError.cpFileIOError
+            return .failure(.cpFileIOError)
         }
     }
     
-    private func branchPrefixes() throws -> [String] {
+    private func branchPrefixes() -> Result<[String], CPError> {
         guard let regexValue = commitPrefixModel.regexValue else {
-            throw CPError.branchValidatorNotFound
+            return .failure(.branchValidatorNotFound)
         }
         
         guard let branch = try? gitHEADFile.readAsString(encodedAs: .utf8) else {
-            throw CPError.headFileIOError
+            return .failure(.headFileIOError)
         }
         
         let matches = branch.occurances(ofRegex: regexValue)
         
         guard matches.count > 0 else {
             let validator = commitPrefixModel.branchValidator ?? "Validator Not Present"
-            throw CPError.invalidBranchPrefix(validator: validator)
+            return .failure(.invalidBranchPrefix(validator: validator))
         }
         
         let uniqueMatches = Set(matches)
-        return Array(uniqueMatches)
+        return .success(Array(uniqueMatches))
     }
     
     private func prefixFormatter(_ rawValue: String) -> [String] {
@@ -97,79 +109,91 @@ struct CPInteractor {
         return parsedValues.map { "[\($0)]" }
     }
     
-    private func validatorFormatter(_ rawValue: String) throws ->  String {
+    private func validatorFormatter(_ rawValue: String) ->  Result<String, CPError> {
         let validator = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
         let containsNoNumbers = validator.occurances(ofRegex: #"(\d+)"#).isEmpty
         let atLeastTwoCharacters = validator.count > 1
         guard containsNoNumbers && atLeastTwoCharacters else {
-            throw CPError.invalidBranchValidatorFormat
+            return .failure(.invalidBranchValidatorFormat)
         }
-        return validator
+        return .success(validator)
     }
     
-    func outputPrefixes() throws -> ConslerOutput {
+    func outputPrefixes() -> Result<ConslerOutput, CPError> {
         switch commitPrefixModel.prefixMode {
         case .normal:
-            return ConslerOutput(commitPrefixModel.prefixes.joined())
+            return .success(ConslerOutput(commitPrefixModel.prefixes.joined()))
         case .branchParse:
-            let retrievedBranchPrefixes = try branchPrefixes()
-            let branchPrefixes = retrievedBranchPrefixes.map { "[\($0)]" }.joined()
-            let normalPrefixes = commitPrefixModel.prefixes.joined()
-            return ConslerOutput(branchPrefixes, normalPrefixes)
+            return branchPrefixes().map {
+                let branchPrefixes = $0.map { "[\($0)]" }.joined()
+                let normalPrefixes = commitPrefixModel.prefixes.joined()
+                return ConslerOutput(branchPrefixes, normalPrefixes)
+            }
         }
     }
     
-    func getCommitPrefixState() throws -> CPState {
+    func getCommitPrefixState() -> Result<CPState, CPError> {
         switch commitPrefixModel.prefixMode {
         case .normal:
-            return CPState(
+            return .success(CPState(
                 mode: .normal,
                 branchPrefixes: [],
                 normalPrefixes: commitPrefixModel.prefixes
-            )
+            ))
         case .branchParse:
-            let retrievedBranchPrefixes = try branchPrefixes()
-            let branchPrefixes = retrievedBranchPrefixes.map { "[\($0)]" }
-            let normalPrefixes = commitPrefixModel.prefixes
-            return CPState(
-                mode: .branchParse,
-                branchPrefixes: branchPrefixes,
-                normalPrefixes: normalPrefixes
-            )
+            return branchPrefixes().map {
+                let branchPrefixes = $0.map { "[\($0)]" }
+                let normalPrefixes = commitPrefixModel.prefixes
+                return CPState(
+                    mode: .branchParse,
+                    branchPrefixes: branchPrefixes,
+                    normalPrefixes: normalPrefixes
+                )
+            }
         }
     }
     
-    func deletePrefixes() throws -> ConslerOutput {
+    func deletePrefixes() -> Result<ConslerOutput, CPError> {
         let newModel = commitPrefixModel.updated(with: [])
-        try saveCommitPrefix(model: newModel)
-        return ConslerOutput("CommitPrefix ", "DELETED").describedBy(.normal, .red)
+        return saveCommitPrefix(model: newModel)
+            .transform(ConslerOutput(
+                "CommitPrefix ", "DELETED")
+                .describedBy(.normal, .red))
     }
     
-    func writeNew(prefixes rawValue: String) throws -> ConslerOutput {
+    func writeNew(prefixes rawValue: String) -> Result<ConslerOutput, CPError> {
         let newPrefixes = prefixFormatter(rawValue)
         let newModel = commitPrefixModel.updated(with: newPrefixes)
-        try saveCommitPrefix(model: newModel)
-        return ConslerOutput("CommitPrefix ", "STORED ", newPrefixes.joined())
-            .describedBy(.normal, .green, .green)
+        return saveCommitPrefix(model: newModel)
+            .transform(ConslerOutput(
+                "CommitPrefix ", "STORED ", newPrefixes.joined())
+                .describedBy(.normal, .green, .green))
     }
     
-    func activateBranchMode(with validator: String) throws -> ConslerOutput {
-        let formattedValidator = try validatorFormatter(validator)
-        let newModel = commitPrefixModel.updatedAsBranchMode(with: formattedValidator)
-        try saveCommitPrefix(model: newModel)
-        return ConslerOutput("CommitPrefix ","MODE BRANCH_PARSE ", formattedValidator)
-            .describedBy(.normal, .cyan, .green)
+    func activateBranchMode(with validator: String) -> Result<ConslerOutput, CPError> {
+        switch validatorFormatter(validator) {
+        case let .success(formattedValidator):
+            let newModel = commitPrefixModel.updatedAsBranchMode(with: formattedValidator)
+            return saveCommitPrefix(model: newModel)
+                .transform(ConslerOutput(
+                    "CommitPrefix ","MODE BRANCH_PARSE ", formattedValidator)
+                    .describedBy(.normal, .cyan, .green))
+        case let .failure(cpError):
+            return .failure(cpError)
+        }
     }
     
-    func activateNormalMode() throws -> ConslerOutput {
+    func activateNormalMode() -> Result<ConslerOutput, CPError> {
         switch commitPrefixModel.prefixMode {
         case .normal:
-            return ConslerOutput("CommitPrefix ", "already in ", "MODE NORMAL")
-                .describedBy(.normal, .yellow, .cyan)
+            return .success(ConslerOutput("CommitPrefix ", "already in ", "MODE NORMAL")
+                .describedBy(.normal, .yellow, .cyan))
         case .branchParse:
             let newModel = commitPrefixModel.updatedAsNormalMode()
-            try saveCommitPrefix(model: newModel)
-            return ConslerOutput("CommitPrefix ", "MODE NORMAL").describedBy(.normal, .cyan)
+            return saveCommitPrefix(model: newModel)
+                .transform(ConslerOutput(
+                    "CommitPrefix ", "MODE NORMAL")
+                    .describedBy(.normal, .cyan))
         }
     }
     

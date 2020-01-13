@@ -34,14 +34,18 @@ struct CommitPrefix {
     
     static func interface() -> CPInterface { CommitPrefix() }
     
-    private func getInteractor() throws -> CPInteractor {
-        guard Folder.current.containsSubfolder(named: FolderName.git) else {
-            throw CPError.notAGitRepo(currentLocation: Folder.current.path)
-        }
-        let gitDirectory = try Folder.current.subfolder(named: FolderName.git)
-        try CommitMessageHook.findOrCreate(with: gitDirectory)
-        let cpInteractor = try CPInteractor(gitDirectory: gitDirectory)
-        return cpInteractor
+    private func getInteractor() -> Result<CPInteractor, CPError>  {
+        
+        guard
+            Folder.current.containsSubfolder(named: FolderName.git),
+            let gitDirectory = try? Folder.current.subfolder(named: FolderName.git)
+            else { return .failure(.notAGitRepo(currentLocation: Folder.current.path)) }
+        
+        return CommitMessageHook
+            .findOrCreate(with: gitDirectory)
+            .transform(gitDirectory)
+            .flatMap(CPInteractor.create)
+        
     }
     
 }
@@ -49,9 +53,10 @@ struct CommitPrefix {
 // MARK: - CPInterface Conformances
 extension CommitPrefix: CPInterface {
     
-    func outputPrefixes() throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        return try cpInteractor.outputPrefixes()
+    func outputPrefixes() -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.outputPrefixes() }
+            .resolveOrExit()
     }
     
     func outputVersion() -> ConslerOutput {
@@ -60,42 +65,49 @@ extension CommitPrefix: CPInterface {
             .describedBy(.normal, .cyan, .cyan)
     }
     
-    func viewState() throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        let cpState = try cpInteractor.getCommitPrefixState()
-        switch cpState.mode {
-        case .normal:
-            return ConslerOutput(
-                "CommitPrefix ", "MODE NORMAL",
-                "- prefixes: ", cpState.normalPrefixes.joined())
-                .describedBy(.normal, .cyanEndsLine, .normal, .cyan)
-        case .branchParse:
-            return ConslerOutput(
-                "CommitPrefix ", "MODE BRANCH_PARSE",
-                "- branch prefixes: ", cpState.branchPrefixes.joined(),
-                "- stored prefixes: ", cpState.normalPrefixes.joined())
-                .describedBy(.normal, .cyanEndsLine, .normal, .cyanEndsLine, .normal, .cyan)
+    func viewState() -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.getCommitPrefixState() }
+            .map { cpState in
+                switch cpState.mode {
+                case .normal:
+                    return ConslerOutput(
+                        "CommitPrefix ", "MODE NORMAL",
+                        "- prefixes: ", cpState.normalPrefixes.joined())
+                        .describedBy(.normal, .cyanEndsLine, .normal, .cyan)
+                case .branchParse:
+                    return ConslerOutput(
+                        "CommitPrefix ", "MODE BRANCH_PARSE",
+                        "- branch prefixes: ", cpState.branchPrefixes.joined(),
+                        "- stored prefixes: ", cpState.normalPrefixes.joined())
+                        .describedBy(.normal, .cyanEndsLine, .normal, .cyanEndsLine, .normal, .cyan)
+                }
         }
+        .resolveOrExit()
     }
     
-    func deletePrefixes() throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        return try cpInteractor.deletePrefixes()
+    func deletePrefixes() -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.deletePrefixes() }
+            .resolveOrExit()
     }
     
-    func writeNew(prefixes rawValue: String) throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        return try cpInteractor.writeNew(prefixes: rawValue)
+    func writeNew(prefixes rawValue: String) -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.writeNew(prefixes: rawValue) }
+            .resolveOrExit()
     }
     
-    func activateBranchMode(with validator: String) throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        return try cpInteractor.activateBranchMode(with: validator)
+    func activateBranchMode(with validator: String) -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.activateBranchMode(with: validator) }
+            .resolveOrExit()
     }
     
-    func activateNormalMode() throws -> ConslerOutput {
-        let cpInteractor = try getInteractor()
-        return try cpInteractor.activateNormalMode()
+    func activateNormalMode() -> ConslerOutput {
+        return getInteractor()
+            .flatMap { $0.activateNormalMode() }
+            .resolveOrExit()
     }
     
 }
