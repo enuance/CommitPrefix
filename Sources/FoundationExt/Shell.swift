@@ -1,5 +1,5 @@
 //
-//  XCTestManifests.swift
+//  Shell.swift
 //  commitPrefix
 //
 //  MIT License
@@ -24,12 +24,20 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-import XCTest
+import Foundation
 
-#if !canImport(ObjectiveC)
-public func allTests() -> [XCTestCaseEntry] {
-    return [
-        testCase(commitPrefixTests.allTests),
-    ]
+public struct Shell {
+    
+    public static func makeExecutable(_ fileName: String) {
+        let executableProcess = Process()
+        executableProcess.launchPath = "/usr/bin/env"
+        executableProcess.arguments = ["chmod", "755", fileName]
+        
+        let pipe = Pipe()
+        executableProcess.standardOutput = pipe
+        executableProcess.launch()
+        
+        executableProcess.waitUntilExit()
+    }
+    
 }
-#endif

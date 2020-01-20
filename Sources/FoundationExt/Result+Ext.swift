@@ -25,9 +25,8 @@
 //  SOFTWARE.
 
 import Foundation
-import Consler
 
-extension Result {
+public extension Result {
     
     func transform<NewSuccess>(_ newValue: NewSuccess) -> Result<NewSuccess, Failure> {
         switch self {
@@ -38,17 +37,24 @@ extension Result {
         }
     }
     
-}
-
-extension Result where Failure == CPError {
+    var optional: Success? {
+        switch self {
+        case let .success(successValue):
+            return successValue
+        case .failure:
+            return nil
+        }
+    }
     
-    func resolveOrExit() -> Success {
+    func `do`(
+        onFailure: @escaping (Failure) -> Void = { _ in },
+        onSuccess: @escaping (Success) -> Void
+        ) {
         switch self {
         case let .success(value):
-            return value
-        case let .failure(cpError):
-            Consler.output(cpError.message, type: .error)
-            exit(cpError.status.value)
+            onSuccess(value)
+        case let .failure(error):
+            onFailure(error)
         }
     }
     
