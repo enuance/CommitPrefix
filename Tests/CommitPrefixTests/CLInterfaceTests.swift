@@ -69,7 +69,7 @@ final class CLInterfaceTests: XCTestCase {
     }
     
     // Special Command that uses no args except for the standard default OS argument
-    func test_viewStateCommand() {
+    func test_ViewStateCommand() {
         let args = ["executable/location"]
         let argument = CLIArguments(arguments: args)
         let expectedCommand = UserCommand.viewState
@@ -87,6 +87,43 @@ final class CLInterfaceTests: XCTestCase {
             onSuccess: validateCommand)
     }
     
+    func test_BranchParseCommand() {
+        let userInputs = "eng"
+        let args = CLITestUtil.makeBranchParseArgument(userInput: [userInputs])
+        let argument = CLIArguments(arguments: args)
+        let expectedCommand = UserCommand.modeBranchParse(validator: userInputs)
+        let failureMessage = "Expected the input of -b \(userInputs) to return to return "
+        + "an output of \(expectedCommand.description)"
+        
+        print("⚖️  ~ Testing -b \(userInputs) for command \(expectedCommand.description)")
+        func validateCommand(foundCommand: UserCommand) -> Void {
+            let isValid = UserCommand.isEquivelent(lhs: foundCommand, rhs: expectedCommand)
+            XCTAssert(isValid, "\(failureMessage) got \(foundCommand.description) instead")
+            let validatorsMatch = UserCommand.isValueEquivelent(
+                lhs: foundCommand, rhs: expectedCommand)
+            let foundValidator = foundCommand.associatedValue() ?? "Nil"
+            XCTAssert(validatorsMatch, """
+                Expected found branch validator \(foundValidator) to be \(userInputs)
+                """)
+        }
+        
+        argument.getCommand().do(
+            onFailure: { XCTFail("Input: -b \(userInputs) \($0.description)") },
+            onSuccess: validateCommand)
+    }
+    
+    func test_ExtraArgsBranchParseCommand() {
+        let userInputs = ["eng", "somethingExtra"]
+        let badInputValue = userInputs.joined(separator: " ")
+        let badArgs = CLITestUtil.makeBranchParseArgument(userInput: userInputs)
+        let badArgument = CLIArguments(arguments: badArgs)
+        let expectedCommand = UserCommand.modeBranchParse(validator: badInputValue)
+        print("⚖️  ~ Testing invalid -b \(badInputValue) for command \(expectedCommand.description)")
+        let badFailureMessage = "Expected the input of -b \(badInputValue) to fail "
+        + "in outputting \(expectedCommand.description)"
+        badArgument.getCommand().do { _ in XCTFail(badFailureMessage) }
+    }
+    
     static var allTests = [
         ("test_SingleArgumentShortCommands", test_SingleArgumentShortCommands),
         ("test_SingleArgumentLongCommands", test_SingleArgumentLongCommands),
@@ -94,7 +131,9 @@ final class CLInterfaceTests: XCTestCase {
         ("test_FailingSingleArgumentLongCommands", test_FailingSingleArgumentLongCommands),
         ("test_ExtraArgsSingleArgumentShortCommands", test_ExtraArgsSingleArgumentShortCommands),
         ("test_ExtraArgsSingleArgumentLongCommands", test_ExtraArgsSingleArgumentLongCommands),
-        ("test_viewStateCommand", test_viewStateCommand)
+        ("test_ViewStateCommand", test_ViewStateCommand),
+        ("test_BranchParseCommand", test_BranchParseCommand),
+        ("test_ExtraArgsBranchParseCommand", test_ExtraArgsBranchParseCommand)
     ]
     
 }
@@ -135,6 +174,14 @@ struct CLITestUtil {
             .init(proper: .normal, malformed: .badNormal, extraInput: "get me to normal mode")
         ]
         
+    }
+    
+    static func makeBranchParseArgument(
+        useLong: Bool = false,
+        userInput: [String]
+    ) -> [String] {
+        let argList = ["executable/location", (useLong ? "--branchParse" : "-b")]
+        return argList + userInput
     }
     
     static func makeArgument(
@@ -236,19 +283,13 @@ extension UserCommand {
     
     static func isEquivelent(lhs: UserCommand, rhs: UserCommand) -> Bool {
         switch (lhs, rhs) {
-        case (.outputVersion, .outputVersion):
-            return true
-        case (.viewState, .viewState):
-            return true
-        case (.outputPrefixes, .outputPrefixes):
-            return true
-        case (.deletePrefixes, .deletePrefixes):
-            return true
-        case (.modeNormal, .modeNormal):
-          return true
-        case (.modeBranchParse, .modeBranchParse):
-              return true
-        case (.newPrefixes, .newPrefixes):
+        case (.outputVersion, .outputVersion),
+             (.viewState, .viewState),
+             (.outputPrefixes, .outputPrefixes),
+             (.deletePrefixes, .deletePrefixes),
+             (.modeNormal, .modeNormal),
+             (.modeBranchParse, .modeBranchParse),
+             (.newPrefixes, .newPrefixes):
             return true
         default:
             return false
@@ -256,4 +297,25 @@ extension UserCommand {
         
     }
     
+    static func isValueEquivelent(lhs: UserCommand, rhs: UserCommand) -> Bool {
+        switch (lhs, rhs) {
+        case let (.modeBranchParse(lhsValue), .modeBranchParse(rhsValue)):
+              return lhsValue == rhsValue
+        case let (.newPrefixes(lhsValue), .newPrefixes(rhsValue)):
+            return lhsValue == rhsValue
+        default:
+            return false
+        }
+    }
+    
+    func associatedValue() -> String? {
+        switch self {
+        case let .modeBranchParse(validator: value):
+            return value
+        case let .newPrefixes(value: value):
+            return value
+        default:
+            return nil
+        }
+    }
 }
