@@ -25,9 +25,11 @@
 //  SOFTWARE.
 
 import XCTest
-
-import commitPrefixTests
+@testable import CommitPrefixTests
 
 var tests = [XCTestCaseEntry]()
-tests += commitPrefixTests.allTests()
+
+tests += commitPrefixTests.allTests
+tests += CLInterfaceTests.allTests
+
 XCTMain(tests)
