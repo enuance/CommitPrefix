@@ -27,9 +27,9 @@
 import Foundation
 import SPMUtility
 
-struct CLIArguments {
+public struct CLIArguments {
 
-    enum UserCommand {
+    public enum UserCommand {
         case outputVersion
         case viewState
         case outputPrefixes
@@ -59,7 +59,7 @@ struct CLIArguments {
     private let modeBranchParse: OptionArgument<Bool>
     private let userEntry: PositionalArgument<[String]>
 
-    init(arguments: [String] = CommandLine.arguments) {
+    public init(arguments: [String] = CommandLine.arguments) {
         // The first argument specifies the path of the executable file
         self.rawArgs = Array(arguments.dropFirst())
         let argBuilder = ArgumentBuilder()
@@ -73,7 +73,7 @@ struct CLIArguments {
         self.userEntry = argBuilder.buildUserEntryArgument(parser: parser)
     }
 
-    private func singleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CPError> {
+    private func singleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CLIError> {
         precondition(allCommands.count == 1, "Intended for single Parsed Command only!")
         guard let foundCommand = allCommands.first else {
             return .failure(.commandNotRecognized)
@@ -95,7 +95,7 @@ struct CLIArguments {
         }
     }
     
-    private func doubleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CPError> {
+    private func doubleCommandParse(_ allCommands: [ParsedCommand]) -> Result<UserCommand, CLIError> {
         precondition(allCommands.count == 2, "Intended for two Parsed Commands only!")
         let firstCommand = allCommands[0]
         let secondCommand = allCommands[1]
@@ -110,7 +110,7 @@ struct CLIArguments {
         }
     }
     
-    private func getCommand() -> Result<UserCommand, CPError> {
+    public func getCommand() -> Result<UserCommand, CLIError> {
         guard let parsedArgs = try? parser.parse(rawArgs) else {
             return .failure(.commandNotRecognized)
         }
@@ -126,12 +126,12 @@ struct CLIArguments {
         do {
             try parsedArgs.get(userEntry).map { userEntry in
                 let noMoreThanOneEntry = userEntry.count < 2
-                guard noMoreThanOneEntry else { throw CPError.invalidEntryFormat }
-                guard let theEntry = userEntry.first else { throw CPError.emptyEntry }
+                guard noMoreThanOneEntry else { throw CLIError.invalidEntryFormat }
+                guard let theEntry = userEntry.first else { throw CLIError.emptyEntry }
                 allCommands.append(.userEntry(value: theEntry))
             }
-        } catch let cpError as CPError {
-            return .failure(cpError)
+        } catch let cliError as CLIError {
+            return .failure(cliError)
         } catch {
             return .failure(.unexpectedError)
         }
@@ -149,6 +149,6 @@ struct CLIArguments {
         
     }
     
-    var command: UserCommand { getCommand().resolveOrExit() }
+    public var command: UserCommand { getCommand().resolveOrExit() }
     
 }

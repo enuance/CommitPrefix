@@ -1,5 +1,5 @@
 //
-//  Shell.swift
+//  String+Extensions.swift
 //  commitPrefix
 //
 //  MIT License
@@ -26,18 +26,40 @@
 
 import Foundation
 
-struct Shell {
+public extension String {
     
-    static func makeExecutable(_ fileName: String) {
-        let executableProcess = Process()
-        executableProcess.launchPath = "/usr/bin/env"
-        executableProcess.arguments = ["chmod", "755", fileName]
+    private func findMatches(in string: String, using regex: String) -> [String] {
         
-        let pipe = Pipe()
-        executableProcess.standardOutput = pipe
-        executableProcess.launch()
+        #if DEBUG
+        let isValid = (try? NSRegularExpression(pattern: regex, options: [])) != nil
+        assert(isValid, "Invalid Regex Pattern: \(regex)")
+        #endif
         
-        executableProcess.waitUntilExit()
+        var searchString = string
+        var foundMatches = [String]()
+        
+        var nextMatchFound: Range<String.Index>? {
+            searchString.range(of: regex, options: .regularExpression)
+        }
+        
+        func newSearch(string: String, removing range: Range<String.Index>) -> String {
+            var newString = string
+            let removingRange = string.startIndex..<range.upperBound
+            newString.removeSubrange(removingRange)
+            return newString
+        }
+        
+        while let matchRange = nextMatchFound {
+            let newMatch = String(searchString[matchRange])
+            foundMatches.append(newMatch)
+            searchString = newSearch(string: searchString, removing: matchRange)
+        }
+        
+        return foundMatches
+    }
+    
+    func occurances(ofRegex pattern: String) -> [String] {
+        findMatches(in: self, using: pattern)
     }
     
 }

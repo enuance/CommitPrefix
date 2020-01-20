@@ -27,6 +27,7 @@
 import Consler
 import Files
 import Foundation
+import FoundationExt
 
 struct CommitMessageHook {
     

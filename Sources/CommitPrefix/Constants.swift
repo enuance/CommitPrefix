@@ -28,7 +28,7 @@ import Foundation
 
 struct CPInfo {
     
-    static let version = "1.4.3"
+    static let version = "1.4.4"
     
 }
 

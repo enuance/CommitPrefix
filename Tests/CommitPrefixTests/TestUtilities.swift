@@ -1,5 +1,5 @@
 //
-//  String+Extensions.swift
+//  TestUtilities.swift
 //  commitPrefix
 //
 //  MIT License
@@ -25,41 +25,24 @@
 //  SOFTWARE.
 
 import Foundation
+import XCTest
 
-extension String {
+struct TestUtilities {
     
-    private func findMatches(in string: String, using regex: String) -> [String] {
-        
-        #if DEBUG
-        let isValid = (try? NSRegularExpression(pattern: regex, options: [])) != nil
-        assert(isValid, "Invalid Regex Pattern: \(regex)")
-        #endif
-        
-        var searchString = string
-        var foundMatches = [String]()
-        
-        var nextMatchFound: Range<String.Index>? {
-            searchString.range(of: regex, options: .regularExpression)
-        }
-        
-        func newSearch(string: String, removing range: Range<String.Index>) -> String {
-            var newString = string
-            let removingRange = string.startIndex..<range.upperBound
-            newString.removeSubrange(removingRange)
-            return newString
-        }
-        
-        while let matchRange = nextMatchFound {
-            let newMatch = String(searchString[matchRange])
-            foundMatches.append(newMatch)
-            searchString = newSearch(string: searchString, removing: matchRange)
-        }
-        
-        return foundMatches
+    static func urlOfExecutable(named executableName: String) -> URL {
+        productsDirectory.appendingPathComponent(executableName)
     }
     
-    func occurances(ofRegex pattern: String) -> [String] {
-        findMatches(in: self, using: pattern)
+    /// Returns path to the built products directory.
+    private static var productsDirectory: URL {
+      #if os(macOS)
+        for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
+            return bundle.bundleURL.deletingLastPathComponent()
+        }
+        fatalError("Could not find the products directory")
+      #else
+        return Bundle.main.bundleURL
+      #endif
     }
     
 }

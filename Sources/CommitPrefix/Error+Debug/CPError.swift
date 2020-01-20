@@ -24,43 +24,16 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import enum CLInterface.TerminationStatus
 import Consler
 import Foundation
 
-enum TerminationStatus: Int32 {
-    /// Used when the app finishes as expected
-    case successful
-    
-    /// Used when an error that has not been accounted for has been thrown
-    case unexpectedError
-    
-    /// Used when the user takes an action that stops the application short
-    case userInitiated
-    
-    /// Used when the inputs provided to the app are invalid
-    case invalidInputs
-    
-    /// Used when the app can no longer continue due to user specified settings
-    case invalidContext
-    
-    /// Used when required resources are inaccessible or unavailable
-    case unavailableDependencies
-    
-    var value: Int32 { self.rawValue }
-}
-
 enum CPError: Error {
-    
-    // MARK: - CLI Errors
-    case commandNotRecognized
-    case tooManyArguments
-    case emptyEntry
     
     // MARK: - User Termination Errors
     case overwriteCancelled
     
     // MARK: - Format Errors
-    case invalidEntryFormat
     case invalidBranchValidatorFormat
     case invalidBranchPrefix(validator: String)
     case invalidYesOrNoFormat
@@ -81,25 +54,8 @@ enum CPError: Error {
     var message: ConslerOutput {
         switch self {
             
-        case .commandNotRecognized:
-            return ConslerOutput(
-                "Error: ", "Command not recognized. Enter ", "\"--help\"", " for usage.")
-                .describedBy(.boldRed, .normal, .cyan)
-            
-        case .tooManyArguments:
-            return ConslerOutput(
-                "Error: ", "Too many arguments entered. Only two at a time is supported.")
-                .describedBy(.boldRed)
-            
-        case .emptyEntry:
-            return ConslerOutput("Error: ", "Your entry is empty.").describedBy(.boldRed)
-            
         case .overwriteCancelled:
             return ConslerOutput("Error: ", "Overwrite is cancelled").describedBy(.boldRed)
-            
-        case .invalidEntryFormat:
-            return ConslerOutput("Error: ", "Your entry contains invalid spaces.")
-                .describedBy(.boldRed)
             
         case .invalidBranchValidatorFormat:
             return ConslerOutput(
@@ -155,16 +111,8 @@ enum CPError: Error {
     
     var status: TerminationStatus {
         switch self {
-        case .commandNotRecognized:
-            return .invalidInputs
-        case .tooManyArguments:
-            return .invalidInputs
-        case .emptyEntry:
-            return .invalidInputs
         case .overwriteCancelled:
             return .userInitiated
-        case .invalidEntryFormat:
-            return .invalidInputs
         case .invalidBranchValidatorFormat:
             return .invalidInputs
         case .invalidBranchPrefix:
@@ -187,6 +135,20 @@ enum CPError: Error {
             return .unexpectedError
         }
         
+    }
+    
+}
+
+extension Result where Failure == CPError {
+    
+    func resolveOrExit() -> Success {
+        switch self {
+        case let .success(value):
+            return value
+        case let .failure(cpError):
+            Consler.output(cpError.message, type: .error)
+            exit(cpError.status.value)
+        }
     }
     
 }

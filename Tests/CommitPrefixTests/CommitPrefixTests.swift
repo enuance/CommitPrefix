@@ -24,27 +24,26 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+import CLInterface
+import Foundation
 import XCTest
-import class Foundation.Bundle
 
 final class commitPrefixTests: XCTestCase {
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct
-        // results.
+    
+    func test_wholeApplication() throws {
 
-        // Some of the APIs that we use below are available in macOS 10.13 and above.
-        guard #available(macOS 10.13, *) else {
-            return
-        }
+        guard #available(macOS 10.15, *) else { return }
 
-        let fooBinary = productsDirectory.appendingPathComponent("commitPrefix")
+        let commitPrefixBinary = TestUtilities.urlOfExecutable(named: "commitPrefix")
 
         let process = Process()
-        process.executableURL = fooBinary
+        process.executableURL = commitPrefixBinary
 
         let pipe = Pipe()
         process.standardOutput = pipe
+
+        let errorPipe = Pipe()
+        process.standardError = errorPipe
 
         try process.run()
         process.waitUntilExit()
@@ -52,23 +51,23 @@ final class commitPrefixTests: XCTestCase {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8)
 
-        XCTAssert(false, "Tests have not been implemented")
-        //XCTAssertEqual(output, "Hello, world!\n")
-    }
+        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+        let errorOutput = String(data: errorData, encoding: .utf8)
 
-    /// Returns path to the built products directory.
-    var productsDirectory: URL {
-      #if os(macOS)
-        for bundle in Bundle.allBundles where bundle.bundlePath.hasSuffix(".xctest") {
-            return bundle.bundleURL.deletingLastPathComponent()
-        }
-        fatalError("couldn't find the products directory")
-      #else
-        return Bundle.main.bundleURL
-      #endif
+        let noOutput = output == nil || output == ""
+        let validStdErrOutput = (errorOutput ?? "")
+            .contains("Error: Not in a git repo or at the root of one")
+        
+        XCTAssert(noOutput, """
+        commitPrefix should only return stderr output at this point. A full mock file \
+        environment has not been set up yet.
+        """)
+        
+        XCTAssert(validStdErrOutput, "A CPError.notAGitRepo should be thrown here")
     }
 
     static var allTests = [
-        ("testExample", testExample),
+        ("test_wholeApplication", test_wholeApplication)
     ]
+    
 }
