@@ -9,7 +9,7 @@ let package = Package(
         // 📁 John Sundell's Files Package is great for easy file reading/writing/moving/etc.
         .package(url: "https://github.com/JohnSundell/Files", from: "4.0.0"),
         // 🧰 SPMUtilities for CLI Argument Parsing.
-        .package(url: "https://github.com/apple/swift-package-manager", from: "0.5.0"),
+        .package(url: "https://github.com/apple/swift-package-manager", .exact("0.5.0")),
         // 🖥 Consler for Styled outputs to the Console
         .package(url: "https://github.com/enuance/consler", from: "0.4.0")
     ],
