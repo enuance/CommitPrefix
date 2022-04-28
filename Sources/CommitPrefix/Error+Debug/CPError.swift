@@ -55,56 +55,56 @@ enum CPError: Error {
         switch self {
             
         case .overwriteCancelled:
-            return ConslerOutput("Error: ", "Overwrite is cancelled").describedBy(.boldRed)
+            return ConslerOutput("Error: ", "Overwrite is cancelled").describedBy(.red(.bold))
             
         case .invalidBranchValidatorFormat:
             return ConslerOutput(
                 "Error: ", "The branch validator must be at least two characters long ",
                 "and contain no numbers or spaces")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .invalidBranchPrefix(validator: let validator):
             return ConslerOutput(
                 "Error: ", "Your branch does not begin with", " \(validator)", " and is invalid.",
                 "Either: ", "change your branch name", " or ", "use commitPrefix in MODE NORMAL.")
-                .describedBy(.boldRed, .normal, .yellow, .endsLine, .normal, .cyan, .normal, .cyan)
+                .describedBy(.red(.bold), .normal, .yellow, .endsLine, .normal, .cyan, .normal, .cyan)
             
         case .invalidYesOrNoFormat:
             return ConslerOutput("Error: ", "Expected y or n. The transaction has been cancelled.")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .notAGitRepo(currentLocation: let location):
             return ConslerOutput(
                 "Error: ", "Not in a git repo or at the root of one: ", "\(location)")
-                .describedBy(.boldRed, .normal, .yellow)
+                .describedBy(.red(.bold), .normal, .yellow)
             
         case .directoryNotFound(name: let name, path: let path):
             return ConslerOutput(
                 "Error: ", "Directory named ", "\(name)", " was not found at ", "\(path)")
-                .describedBy(.boldRed, .normal, .yellow, .normal, .yellow)
+                .describedBy(.red(.bold), .normal, .yellow, .normal, .yellow)
             
         case .branchValidatorNotFound:
             return ConslerOutput(
                 "Error: ", "Attempting to provide a branch prefix without a branch validator")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .cpFileIOError:
             return ConslerOutput(
                 "Error: ", "An error occured while reading or writing to the CommitPrefix files")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .hookFileIOError:
             return ConslerOutput(
                 "Error: ", "An error occured while reading or writing to the commit-msg hook")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .headFileIOError:
             return ConslerOutput("Error: ", "Unable to read the git HEAD for branch information")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .unexpectedError:
             return ConslerOutput("Error: ", "An uncategorized error has occured")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
         }
         
     }

@@ -62,23 +62,23 @@ public enum CLIError: Error, Equatable {
         case .commandNotRecognized:
             return ConslerOutput(
                 "Error: ", "Command not recognized. Enter ", "\"--help\"", " for usage.")
-                .describedBy(.boldRed, .normal, .cyan)
+            .describedBy(.red(.bold), .normal, .cyan)
             
         case .tooManyArguments:
             return ConslerOutput(
                 "Error: ", "Too many arguments entered. Only two at a time is supported.")
-                .describedBy(.boldRed)
+            .describedBy(.red(.bold))
             
         case .emptyEntry:
-            return ConslerOutput("Error: ", "Your entry is empty.").describedBy(.boldRed)
+            return ConslerOutput("Error: ", "Your entry is empty.").describedBy(.red(.bold))
             
         case .invalidEntryFormat:
             return ConslerOutput("Error: ", "Your entry contains invalid spaces.")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
             
         case .unexpectedError:
             return ConslerOutput("Error: ", "An uncategorized error has occured")
-                .describedBy(.boldRed)
+                .describedBy(.red(.bold))
         }
     }
     
